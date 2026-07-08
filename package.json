@@ -11,8 +11,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^2.10.0",
+    "better-sqlite3": "^12.11.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "n8n": "^2.28.6",
-    "puppeteer": "^25.3.0"
+    "puppeteer": "^25.3.0",
+    "winston": "^3.19.0"
   },
   "allowScripts": {
     "puppeteer@25.3.0": true
