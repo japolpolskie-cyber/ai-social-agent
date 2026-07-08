@@ -2,6 +2,7 @@ const aiRunner = require('../services/aiRunner');
 const responseService = require('../services/responseService');
 const promptBuilder = require('../services/promptBuilder');
 const rulesValidator = require('../services/rulesValidator');
+const contextBuilder = require('../services/contextBuilder');
 
 async function generatePost(req, res) {
   console.log('✅ LinkedIn Controller reached');
@@ -20,19 +21,37 @@ async function generatePost(req, res) {
       });
     }
 
-    const { prompt, rules } = promptBuilder.build({
+    const context = contextBuilder.build({
       platform: 'linkedin',
       topic,
       tone,
       audience,
     });
 
-    const output = await aiRunner.runAI({
+    const { prompt } = promptBuilder.build(context);
+
+    const { rules } = context;
+
+    let output = await aiRunner.runAI({
       workflow: 'LinkedIn Post Generator',
       endpoint: '/linkedin/post',
       prompt,
       model: 'gemini',
     });
+
+    output = output
+      .replace(/^Here's.*?:\s*/i, '')
+      .replace(/^---\s*/m, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '');
+
+    const hashtags = output.match(/#[\w]+/g) || [];
+
+    if (hashtags.length > 3) {
+      const allowedHashtags = hashtags.slice(0, 3);
+      output = output.replace(/#[\w]+/g, '');
+      output = `${output.trim()}\n\n${allowedHashtags.join(' ')}`;
+    }
 
     const validation = rulesValidator.validate(output, rules);
 

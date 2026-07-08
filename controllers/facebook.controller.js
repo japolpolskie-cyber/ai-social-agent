@@ -2,6 +2,7 @@ const aiRunner = require('../services/aiRunner');
 const responseService = require('../services/responseService');
 const promptBuilder = require('../services/promptBuilder');
 const rulesValidator = require('../services/rulesValidator');
+const contextBuilder = require('../services/contextBuilder');
 
 async function caption(req, res) {
   try {
@@ -19,12 +20,16 @@ async function caption(req, res) {
       );
     }
 
-    const { prompt, rules } = promptBuilder.build({
+    const context = contextBuilder.build({
       platform: 'facebook',
       topic,
       tone,
       audience,
     });
+
+    const { prompt } = promptBuilder.build(context);
+
+    const { rules } = context;
 
     const output = await aiRunner.runAI({
       workflow: 'Facebook Caption',

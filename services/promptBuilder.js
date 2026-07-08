@@ -1,27 +1,14 @@
 const templateService = require('./templateService');
-const platformRules = require('./platformRules');
 
-function build({
-  platform = 'facebook',
-  topic,
-  tone,
-  audience,
-}) {
-  const rules = platformRules.getRules(platform);
-
+function build(context) {
   const prompt = templateService.render(
-    `${platform}/caption`,
-    {
-      topic,
-      tone,
-      audience,
-      rules,
-    }
+    `${context.platform}/caption`,
+    context
   );
 
   return {
     prompt,
-    rules,
+    context,
   };
 }
 
