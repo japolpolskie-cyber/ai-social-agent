@@ -2,6 +2,7 @@ const aiRunner = require('../services/aiRunner');
 const templateService = require('../services/templateService');
 const responseService = require('../services/responseService');
 const templateDiscovery = require('../services/templateDiscovery');
+const formatterService = require('../services/formatterService');
 
 async function generate(req, res) {
   try {
@@ -41,12 +42,14 @@ async function generate(req, res) {
       prompt,
     });
 
+    const cleanOutput = formatterService.clean(output);
+
     return responseService.success(res, {
       workflow: `${platform} ${type}`,
       endpoint: '/ai/generate',
       provider,
       template: templateName,
-      output,
+      output: cleanOutput,
     });
   } catch (error) {
     return responseService.error(res, error.message, 500);
