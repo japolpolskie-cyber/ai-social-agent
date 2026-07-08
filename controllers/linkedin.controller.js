@@ -1,6 +1,7 @@
 const aiRunner = require('../services/aiRunner');
 const responseService = require('../services/responseService');
 const promptBuilder = require('../services/promptBuilder');
+const rulesValidator = require('../services/rulesValidator');
 
 async function generatePost(req, res) {
   console.log('✅ LinkedIn Controller reached');
@@ -33,11 +34,14 @@ async function generatePost(req, res) {
       model: 'gemini',
     });
 
+    const validation = rulesValidator.validate(output, rules);
+
     return responseService.success(res, {
       workflow: 'LinkedIn Post Generator',
       endpoint: '/linkedin/post',
       provider: 'gemini',
       rules,
+      validation,
       output,
     });
   } catch (error) {

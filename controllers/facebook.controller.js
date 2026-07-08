@@ -1,6 +1,7 @@
 const aiRunner = require('../services/aiRunner');
 const responseService = require('../services/responseService');
 const promptBuilder = require('../services/promptBuilder');
+const rulesValidator = require('../services/rulesValidator');
 
 async function caption(req, res) {
   try {
@@ -32,11 +33,14 @@ async function caption(req, res) {
       prompt,
     });
 
+    const validation = rulesValidator.validate(output, rules);
+
     return responseService.success(res, {
       workflow: 'Facebook Caption',
       endpoint: '/facebook/caption',
       provider: 'gemini',
       rules,
+      validation,
       output,
     });
 
