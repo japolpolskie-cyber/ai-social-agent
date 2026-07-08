@@ -3,6 +3,7 @@ const templateService = require('../services/templateService');
 const responseService = require('../services/responseService');
 const templateDiscovery = require('../services/templateDiscovery');
 const formatterService = require('../services/formatterService');
+const validatorService = require('../services/validatorService');
 
 async function generate(req, res) {
   try {
@@ -43,6 +44,12 @@ async function generate(req, res) {
     });
 
     const cleanOutput = formatterService.clean(output);
+    const validation = validatorService.validate(cleanOutput, {
+      maxCharacters: 3000,
+      maxHashtags: 8,
+      maxEmojis: 10,
+      requireCTA: true,
+    });
 
     return responseService.success(res, {
       workflow: `${platform} ${type}`,
@@ -50,6 +57,7 @@ async function generate(req, res) {
       provider,
       template: templateName,
       output: cleanOutput,
+      validation,
     });
   } catch (error) {
     return responseService.error(res, error.message, 500);
