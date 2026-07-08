@@ -1,6 +1,6 @@
 const aiRunner = require('../services/aiRunner');
-const templateService = require('../services/templateService');
 const responseService = require('../services/responseService');
+const promptBuilder = require('../services/promptBuilder');
 
 async function caption(req, res) {
   try {
@@ -18,14 +18,12 @@ async function caption(req, res) {
       );
     }
 
-    const prompt = templateService.render(
-      'facebook/caption',
-      {
-        topic,
-        tone,
-        audience,
-      }
-    );
+    const { prompt, rules } = promptBuilder.build({
+      platform: 'facebook',
+      topic,
+      tone,
+      audience,
+    });
 
     const output = await aiRunner.runAI({
       workflow: 'Facebook Caption',
@@ -38,6 +36,7 @@ async function caption(req, res) {
       workflow: 'Facebook Caption',
       endpoint: '/facebook/caption',
       provider: 'gemini',
+      rules,
       output,
     });
 
