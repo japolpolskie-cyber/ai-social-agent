@@ -1,15 +1,9 @@
-const express = require('express');
+const express = require("express");
+
+const { getVersion } = require("../controllers/version.controller");
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json({
-    success: true,
-    name: 'AI Social Agent',
-    version: '1.0.0',
-    provider: process.env.DEFAULT_PROVIDER || 'gemini',
-    environment: process.env.NODE_ENV || 'development',
-  });
-});
+router.get("/", getVersion);
 
 module.exports = router;
