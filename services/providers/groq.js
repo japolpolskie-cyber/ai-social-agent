@@ -4,12 +4,13 @@
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-const DEFAULT_MODEL =
-  process.env.GROQ_MODEL || "llama-3.1-8b-instant";
-
-async function generate({ prompt, model = DEFAULT_MODEL }) {
+async function generate({ prompt, model, options = {} }) {
   if (!process.env.GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY is missing.");
+  }
+
+  if (!model) {
+    throw new Error("Groq model is required.");
   }
 
   const response = await fetch(GROQ_API_URL, {
@@ -26,7 +27,7 @@ async function generate({ prompt, model = DEFAULT_MODEL }) {
           content: prompt,
         },
       ],
-      temperature: 0.7,
+      temperature: options.temperature ?? 0.7,
     }),
   });
 

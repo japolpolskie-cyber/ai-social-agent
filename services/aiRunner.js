@@ -4,6 +4,7 @@
 
 const logger = require("./logger");
 const providerManager = require("./providerManager");
+const modelManager = require("./modelManager");
 
 function normalizeAIError(error) {
   const message = error?.message || "AI generation failed.";
@@ -33,18 +34,27 @@ async function runAI({
   workflow = "AI Workflow",
   endpoint = "",
   prompt = "",
-  model = "default",
+  model,
+  options = {},
 }) {
   const start = Date.now();
-  let providerName = provider;
+
+  let providerName = provider || "default";
+  let modelName = model || "default";
 
   try {
     providerName = providerManager.resolveProviderName(provider);
 
     const selectedProvider = providerManager.getActiveProvider(providerName);
 
+    const resolvedModel = modelManager.resolveModel(providerName, model);
+
+    modelName = resolvedModel.name;
+
     const output = await selectedProvider.generate({
       prompt,
+      model: resolvedModel.model,
+      options,
     });
 
     const executionTime = Date.now() - start;
@@ -55,7 +65,7 @@ async function runAI({
       provider: providerName,
       prompt,
       response: output,
-      model,
+      model: modelName,
       status: "success",
       executionTime,
     });
@@ -71,7 +81,7 @@ async function runAI({
       provider: providerName || "unknown",
       prompt,
       response: friendlyError,
-      model,
+      model: modelName,
       status: "failed",
       executionTime,
     });

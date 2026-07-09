@@ -1,9 +1,18 @@
-const ai = require('../ai');
+// ======================================================
+// Gemini Provider
+// ======================================================
 
-async function generate({ prompt }) {
-  return await ai.generateText(prompt);
+const geminiClient = require("../clients/geminiClient");
+
+async function generate({ prompt, model, options = {} }) {
+  return await geminiClient.generateText({
+    prompt,
+    model,
+    options,
+  });
 }
 
 module.exports = {
+  name: "gemini",
   generate,
 };
