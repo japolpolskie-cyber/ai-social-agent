@@ -6,6 +6,7 @@ const appConfig = require("../config/app");
 const serverConfig = require("../config/server");
 const providerConfig = require("../config/providers");
 const databaseConfig = require("../config/database");
+const modelConfig = require("../config/models");
 
 function getApp() {
   return appConfig;
@@ -23,12 +24,17 @@ function getDatabase() {
   return databaseConfig;
 }
 
+function getModels() {
+  return modelConfig;
+}
+
 function getSystemInfo() {
   return {
     app: appConfig,
     server: serverConfig,
     providers: providerConfig,
     database: databaseConfig,
+    models: modelConfig,
   };
 }
 
@@ -38,4 +44,5 @@ module.exports = {
   getProviders,
   getDatabase,
   getSystemInfo,
+  getModels,
 };
