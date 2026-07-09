@@ -3,6 +3,7 @@
 // ======================================================
 
 const providerManager = require("../services/providerManager");
+const providerHealthService = require("../services/providerHealthService");
 
 function getProviders(req, res) {
   const providers = providerManager.listProviders();
@@ -17,6 +18,16 @@ function getProviders(req, res) {
   });
 }
 
+function getProviderHealth(req, res) {
+  const health = providerHealthService.checkAllProviders();
+
+  res.json({
+    success: true,
+    providers: health,
+  });
+}
+
 module.exports = {
   getProviders,
+  getProviderHealth,
 };
