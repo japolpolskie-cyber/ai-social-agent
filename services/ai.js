@@ -1,34 +1,51 @@
-require('dotenv').config();
+// ======================================================
+// Legacy AI Service
+// ======================================================
+//
+// This service now delegates to aiRunner.
+// Do not call provider SDKs directly here.
+// Do not hardcode models here.
+// ======================================================
 
-const { GoogleGenAI } = require('@google/genai');
+const aiRunner = require("./aiRunner");
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
-async function generateText(prompt) {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
+async function generateText(prompt, options = {}) {
+  return aiRunner.runAI({
+    workflow: options.workflow || "Legacy AI Text Generation",
+    endpoint: options.endpoint || "services/ai.js",
+    provider: options.provider,
+    model: options.model,
+    prompt,
+    options: options.aiOptions || {},
   });
-
-  return response.text;
 }
 
-async function summarize(text) {
-  return generateText(`
+async function summarize(text, options = {}) {
+  return generateText(
+    `
 Summarize this text in simple, clear bullet points:
 
 ${text}
-  `);
+    `.trim(),
+    {
+      ...options,
+      workflow: options.workflow || "Legacy AI Summarizer",
+    }
+  );
 }
 
-async function generateCaption(text) {
-  return generateText(`
+async function generateCaption(text, options = {}) {
+  return generateText(
+    `
 Create a short social media caption based on this:
 
 ${text}
-  `);
+    `.trim(),
+    {
+      ...options,
+      workflow: options.workflow || "Legacy Caption Generator",
+    }
+  );
 }
 
 module.exports = {
