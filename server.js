@@ -12,6 +12,7 @@ const aiRoutes = require("./routes/ai.routes");
 const linkedinRoutes = require("./routes/linkedin.routes");
 const versionRoutes = require("./routes/version.routes");
 const providersRoutes = require("./routes/providers.routes");
+const systemRoutes = require("./routes/system.routes");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/facebook", facebookRoutes);
 app.use("/linkedin", linkedinRoutes);
 app.use("/version", versionRoutes);
 app.use("/providers", providersRoutes);
+app.use("/system", systemRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

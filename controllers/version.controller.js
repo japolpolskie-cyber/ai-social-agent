@@ -2,20 +2,22 @@
 // Version Controller
 // ======================================================
 
-const appConfig = require("../config/app");
-const providerConfig = require("../config/providers");
+const config = require("../services/configService");
 
 function getVersion(req, res) {
-  res.json({
-    success: true,
-    name: appConfig.name,
-    version: appConfig.version,
-    author: appConfig.author,
-    environment: appConfig.environment,
-    provider: providerConfig.defaultProvider,
-  });
+    const app = config.getApp();
+    const providers = config.getProviders();
+
+    res.json({
+        success: true,
+        name: app.name,
+        version: app.version,
+        author: app.author,
+        environment: app.environment,
+        provider: providers.defaultProvider,
+    });
 }
 
 module.exports = {
-  getVersion,
+    getVersion,
 };

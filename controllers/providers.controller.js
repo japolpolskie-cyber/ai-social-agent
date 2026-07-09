@@ -2,17 +2,19 @@
 // Providers Controller
 // ======================================================
 
-const providerConfig = require("../config/providers");
+const config = require("../services/configService");
 
 function getProviders(req, res) {
-  res.json({
-    success: true,
-    default: providerConfig.defaultProvider,
-    enabled: providerConfig.enabledProviders,
-    count: providerConfig.enabledProviders.length,
-  });
+    const providers = config.getProviders();
+
+    res.json({
+        success: true,
+        default: providers.defaultProvider,
+        enabled: providers.enabledProviders,
+        count: providers.enabledProviders.length,
+    });
 }
 
 module.exports = {
-  getProviders,
+    getProviders,
 };
