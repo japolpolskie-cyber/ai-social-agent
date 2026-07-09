@@ -15,7 +15,7 @@ module.exports = {
     },
 
     openrouter: {
-      enabled: false,
+      enabled: true,
     },
   },
 };

@@ -27,7 +27,7 @@ module.exports = {
     "openrouter-qwen": {
       provider: "openrouter",
       model: process.env.OPENROUTER_MODEL || "qwen/qwen3-coder:free",
-      enabled: false,
+      enabled: true,
       useCase: "general",
     },
   },

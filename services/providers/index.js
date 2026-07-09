@@ -4,10 +4,12 @@
 
 const gemini = require("./gemini");
 const groq = require("./groq");
+const openrouter = require("./openrouter");
 
 const providers = {
   gemini,
   groq,
+  openrouter,
 };
 
 function getProvider(name) {
