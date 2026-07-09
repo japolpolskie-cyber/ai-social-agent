@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Social Agent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="app-header">
+            <div>
+                <h1>🚀 AI Social Agent</h1>
+                <p>AI Content Playground</p>
+            </div>
+
+            <span class="provider-badge">🟢 Gemini</span>
+        </header>
+
+        <div class="app-layout">
+
+            <div class="panel">
+                <h2>⚙️ Content Setup</h2>
+
+                <label for="topicInput">Topic</label>
+                <input id="topicInput" type="text" value="AI automation for small businesses">
+
+                <label for="platformInput">Platform</label>
+                <select id="platformInput">
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="facebook">Facebook</option>
+                </select>
+
+                <label for="typeInput">Content Type</label>
+                <select id="typeInput">
+                    <option value="post">Post</option>
+                    <option value="caption">Caption</option>
+                </select>
+
+                <label for="toneInput">Tone</label>
+                <input id="toneInput" type="text" value="professional but friendly">
+
+                <label for="audienceInput">Audience</label>
+                <input id="audienceInput" type="text" value="small business owners">
+
+                <button id="generateBtn">✨ Generate</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>✨ Generated Content</h2>
+
+                    <div class="toolbar">
+                        <button id="copyBtn" class="small-btn">📋 Copy</button>
+                        <button id="clearBtn" class="small-btn secondary">🗑 Clear</button>
+                    </div>
+                </div>
+
+                <div id="output" class="output">Waiting...</div>
+
+                <div class="stats">
+                    <span id="charCount">Characters: 0</span>
+                    <span id="wordCount">Words: 0</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="modules/api.js"></script>
+    <script src="modules/ui.js"></script>
+    <script src="modules/stats.js"></script>
+    <script src="modules/clipboard.js"></script>
+    <script src="modules/loading.js"></script>
+    <script src="modules/toast.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
