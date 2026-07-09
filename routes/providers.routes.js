@@ -1,13 +1,9 @@
-const express = require('express');
+const express = require("express");
+
+const { getProviders } = require("../controllers/providers.controller");
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json({
-    success: true,
-    defaultProvider: process.env.DEFAULT_PROVIDER || 'gemini',
-    providers: ['gemini'],
-  });
-});
+router.get("/", getProviders);
 
 module.exports = router;
