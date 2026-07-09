@@ -3,9 +3,11 @@
 // ======================================================
 
 const gemini = require("./gemini");
+const groq = require("./groq");
 
 const providers = {
   gemini,
+  groq,
 };
 
 function getProvider(name) {

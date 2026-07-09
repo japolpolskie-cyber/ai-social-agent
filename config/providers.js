@@ -11,7 +11,7 @@ module.exports = {
     },
 
     groq: {
-      enabled: false,
+      enabled: true,
     },
 
     openrouter: {
