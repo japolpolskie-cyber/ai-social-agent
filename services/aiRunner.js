@@ -1,5 +1,9 @@
+// ======================================================
+// AI Runner
+// ======================================================
+
 const logger = require("./logger");
-const { getProvider } = require("./providers");
+const providerManager = require("./providerManager");
 
 function normalizeAIError(error) {
   const message = error?.message || "AI generation failed.";
@@ -9,7 +13,7 @@ function normalizeAIError(error) {
     message.includes("RESOURCE_EXHAUSTED") ||
     message.toLowerCase().includes("quota")
   ) {
-    return "Gemini quota exceeded. Please try again later or switch provider.";
+    return "AI quota exceeded. Please try again later or switch provider.";
   }
 
   if (
@@ -25,20 +29,19 @@ function normalizeAIError(error) {
 }
 
 async function runAI({
-  provider = "gemini",
+  provider,
   workflow = "AI Workflow",
   endpoint = "",
   prompt = "",
-  model = "gemini",
+  model = "default",
 }) {
   const start = Date.now();
+  let providerName = provider;
 
   try {
-    const selectedProvider = getProvider(provider);
+    providerName = providerManager.resolveProviderName(provider);
 
-    if (!selectedProvider) {
-      throw new Error(`Provider "${provider}" is not supported.`);
-    }
+    const selectedProvider = providerManager.getActiveProvider(providerName);
 
     const output = await selectedProvider.generate({
       prompt,
@@ -49,7 +52,7 @@ async function runAI({
     logger.logRun({
       workflow,
       endpoint,
-      provider,
+      provider: providerName,
       prompt,
       response: output,
       model,
@@ -65,7 +68,7 @@ async function runAI({
     logger.logRun({
       workflow,
       endpoint,
-      provider,
+      provider: providerName || "unknown",
       prompt,
       response: friendlyError,
       model,

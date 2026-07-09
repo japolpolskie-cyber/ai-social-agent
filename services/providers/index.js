@@ -1,19 +1,32 @@
-const gemini = require('./gemini');
+// ======================================================
+// Provider Registry
+// ======================================================
+
+const gemini = require("./gemini");
 
 const providers = {
   gemini,
 };
 
-function getProvider(name = 'gemini') {
-  const provider = providers[name];
+function getProvider(name) {
+  return providers[name] || null;
+}
 
-  if (!provider) {
-    throw new Error(`Provider "${name}" is not supported.`);
-  }
+function hasProvider(name) {
+  return Object.prototype.hasOwnProperty.call(providers, name);
+}
 
-  return provider;
+function getAllProviders() {
+  return providers;
+}
+
+function getProviderNames() {
+  return Object.keys(providers);
 }
 
 module.exports = {
   getProvider,
+  hasProvider,
+  getAllProviders,
+  getProviderNames,
 };
