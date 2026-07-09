@@ -1,12 +1,35 @@
-const logger = require('./logger');
-const { getProvider } = require('./providers');
+const logger = require("./logger");
+const { getProvider } = require("./providers");
+
+function normalizeAIError(error) {
+  const message = error?.message || "AI generation failed.";
+
+  if (
+    message.includes("429") ||
+    message.includes("RESOURCE_EXHAUSTED") ||
+    message.toLowerCase().includes("quota")
+  ) {
+    return "Gemini quota exceeded. Please try again later or switch provider.";
+  }
+
+  if (
+    message.includes("API key") ||
+    message.includes("authentication") ||
+    message.includes("401") ||
+    message.includes("403")
+  ) {
+    return "AI provider authentication failed. Please check your API key.";
+  }
+
+  return message;
+}
 
 async function runAI({
-  provider = 'gemini',
-  workflow = 'AI Workflow',
-  endpoint = '',
-  prompt = '',
-  model = 'gemini',
+  provider = "gemini",
+  workflow = "AI Workflow",
+  endpoint = "",
+  prompt = "",
+  model = "gemini",
 }) {
   const start = Date.now();
 
@@ -18,8 +41,9 @@ async function runAI({
     }
 
     const output = await selectedProvider.generate({
-  prompt,
-});
+      prompt,
+    });
+
     const executionTime = Date.now() - start;
 
     logger.logRun({
@@ -29,26 +53,27 @@ async function runAI({
       prompt,
       response: output,
       model,
-      status: 'success',
+      status: "success",
       executionTime,
     });
 
     return output;
   } catch (error) {
     const executionTime = Date.now() - start;
+    const friendlyError = normalizeAIError(error);
 
     logger.logRun({
       workflow,
       endpoint,
       provider,
       prompt,
-      response: error.message,
+      response: friendlyError,
       model,
-      status: 'failed',
+      status: "failed",
       executionTime,
     });
 
-    throw error;
+    throw new Error(friendlyError);
   }
 }
 
