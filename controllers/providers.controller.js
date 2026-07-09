@@ -2,19 +2,21 @@
 // Providers Controller
 // ======================================================
 
-const config = require("../services/configService");
+const providerManager = require("../services/providerManager");
 
 function getProviders(req, res) {
-    const providers = config.getProviders();
+  const providers = providerManager.listProviders();
+  const enabledProviders = providerManager.getEnabledProviders();
 
-    res.json({
-        success: true,
-        default: providers.defaultProvider,
-        enabled: providers.enabledProviders,
-        count: providers.enabledProviders.length,
-    });
+  res.json({
+    success: true,
+    default: providerManager.getDefaultProviderName(),
+    enabled: enabledProviders,
+    count: enabledProviders.length,
+    providers,
+  });
 }
 
 module.exports = {
-    getProviders,
+  getProviders,
 };

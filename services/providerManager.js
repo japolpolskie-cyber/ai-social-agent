@@ -5,22 +5,34 @@
 const { getProvider } = require("./providers");
 const configService = require("./configService");
 
+function getProvidersConfig() {
+  return configService.getProviders();
+}
+
 function getDefaultProviderName() {
-  const providersConfig = configService.getProviders();
+  const providersConfig = getProvidersConfig();
 
   return providersConfig.defaultProvider;
 }
 
-function getEnabledProviders() {
-  const providersConfig = configService.getProviders();
+function getProviderSettings(providerName) {
+  const providersConfig = getProvidersConfig();
 
-  return providersConfig.enabledProviders || [];
+  return providersConfig.providers[providerName] || null;
+}
+
+function getEnabledProviders() {
+  const providersConfig = getProvidersConfig();
+
+  return Object.entries(providersConfig.providers)
+    .filter(([, settings]) => settings.enabled)
+    .map(([providerName]) => providerName);
 }
 
 function isProviderEnabled(providerName) {
-  const enabledProviders = getEnabledProviders();
+  const settings = getProviderSettings(providerName);
 
-  return enabledProviders.includes(providerName);
+  return Boolean(settings && settings.enabled);
 }
 
 function resolveProviderName(requestedProvider) {
@@ -46,18 +58,22 @@ function getActiveProvider(requestedProvider) {
 }
 
 function listProviders() {
-  const enabledProviders = getEnabledProviders();
+  const providersConfig = getProvidersConfig();
   const defaultProvider = getDefaultProviderName();
 
-  return enabledProviders.map((providerName) => ({
-    name: providerName,
-    enabled: true,
-    default: providerName === defaultProvider,
-  }));
+  return Object.entries(providersConfig.providers).map(
+    ([providerName, settings]) => ({
+      name: providerName,
+      enabled: Boolean(settings.enabled),
+      default: providerName === defaultProvider,
+    })
+  );
 }
 
 module.exports = {
+  getProvidersConfig,
   getDefaultProviderName,
+  getProviderSettings,
   getEnabledProviders,
   isProviderEnabled,
   resolveProviderName,
