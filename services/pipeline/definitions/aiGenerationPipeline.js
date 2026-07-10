@@ -38,6 +38,26 @@ module.exports = createPipelineDefinition({
   description:
     "Generates, validates, repairs, and processes AI social content.",
 
+  metadata: {
+    category: "content-generation",
+
+    tags: [
+      "ai",
+      "social-content",
+      "generation",
+      "validation",
+      "repair",
+    ],
+
+    reusable: true,
+
+    experimental: false,
+
+    deprecated: false,
+
+    visibility: "internal",
+  },
+
   stages: [
     validateInputStage,
     buildContextStage,
@@ -46,9 +66,4 @@ module.exports = createPipelineDefinition({
     executeAIStage,
     processOutputStage,
   ],
-
-  metadata: {
-    category: "content-generation",
-    reusable: true,
-  },
 });

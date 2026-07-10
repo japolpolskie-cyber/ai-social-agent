@@ -2,6 +2,14 @@
 // Pipeline Definition Builder
 // ======================================================
 
+const {
+  createPipelineMetadata,
+} = require("../models/pipelineMetadata");
+
+// ======================================================
+// Validation
+// ======================================================
+
 function assertNonEmptyString(value, field) {
   if (
     typeof value !== "string" ||
@@ -13,6 +21,23 @@ function assertNonEmptyString(value, field) {
   }
 
   return value.trim();
+}
+
+function normalizeDescription(description) {
+  if (
+    description === undefined ||
+    description === null
+  ) {
+    return "";
+  }
+
+  if (typeof description !== "string") {
+    throw new TypeError(
+      'Pipeline definition "description" must be a string.'
+    );
+  }
+
+  return description.trim();
 }
 
 function assertStages(stages) {
@@ -29,6 +54,7 @@ function assertStages(stages) {
     if (
       !stage ||
       typeof stage.name !== "string" ||
+      stage.name.trim().length === 0 ||
       typeof stage.execute !== "function"
     ) {
       throw new TypeError(
@@ -40,6 +66,10 @@ function assertStages(stages) {
   return Object.freeze([...stages]);
 }
 
+// ======================================================
+// Builder
+// ======================================================
+
 function createPipelineDefinition({
   name,
   version,
@@ -48,18 +78,21 @@ function createPipelineDefinition({
   stages,
 } = {}) {
   return Object.freeze({
-    name: assertNonEmptyString(name, "name"),
+    name: assertNonEmptyString(
+      name,
+      "name"
+    ),
 
     version: assertNonEmptyString(
       version,
       "version"
     ),
 
-    description,
+    description:
+      normalizeDescription(description),
 
-    metadata: Object.freeze({
-      ...metadata,
-    }),
+    metadata:
+      createPipelineMetadata(metadata),
 
     stages: assertStages(stages),
   });
