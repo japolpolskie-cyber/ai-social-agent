@@ -7,6 +7,7 @@ const serverConfig = require("../config/server");
 const providerConfig = require("../config/providers");
 const databaseConfig = require("../config/database");
 const modelConfig = require("../config/models");
+const routingConfig = require("../config/routing");
 
 function getApp() {
   return appConfig;
@@ -28,6 +29,10 @@ function getModels() {
   return modelConfig;
 }
 
+function getRouting() {
+  return routingConfig;
+}
+
 function getSystemInfo() {
   return {
     app: appConfig,
@@ -35,6 +40,7 @@ function getSystemInfo() {
     providers: providerConfig,
     database: databaseConfig,
     models: modelConfig,
+    routing: routingConfig,
   };
 }
 
@@ -43,6 +49,7 @@ module.exports = {
   getServer,
   getProviders,
   getDatabase,
-  getSystemInfo,
   getModels,
+  getRouting,
+  getSystemInfo,
 };
