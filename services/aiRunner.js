@@ -3,10 +3,14 @@
 // ======================================================
 
 const logger = require("./logger");
-const { executeWithFallback } = require("./fallbackEngine");
-const { normalizeAIError } = require("./aiError");
+const {
+  executeWithFallback,
+} = require("./fallbackEngine");
+const {
+  normalizeAIError,
+} = require("./aiError");
 
-async function runAI({
+async function runAIWithMetadata({
   provider,
   workflow = "AI Workflow",
   endpoint = "",
@@ -43,10 +47,21 @@ async function runAI({
       executionTime,
     });
 
-    return result.output;
+    return {
+      output: result.output,
+      provider: providerName,
+      model: modelName,
+      attempts: Array.isArray(result.attempts)
+        ? result.attempts
+        : [],
+      executionTime,
+    };
   } catch (error) {
     const executionTime = Date.now() - start;
-    const friendlyError = normalizeAIError(error.cause || error);
+
+    const friendlyError = normalizeAIError(
+      error.cause || error
+    );
 
     const attempts = Array.isArray(error.attempts)
       ? error.attempts
@@ -55,8 +70,11 @@ async function runAI({
     const lastAttempt = attempts.at(-1);
 
     if (lastAttempt) {
-      providerName = lastAttempt.provider || providerName;
-      modelName = lastAttempt.model || modelName;
+      providerName =
+        lastAttempt.provider || providerName;
+
+      modelName =
+        lastAttempt.model || modelName;
     }
 
     logger.logRun({
@@ -70,15 +88,26 @@ async function runAI({
       executionTime,
     });
 
-    const executionError = new Error(friendlyError);
+    const executionError =
+      new Error(friendlyError);
 
     executionError.cause = error;
     executionError.attempts = attempts;
+    executionError.executionTime =
+      executionTime;
 
     throw executionError;
   }
 }
 
+async function runAI(options = {}) {
+  const result =
+    await runAIWithMetadata(options);
+
+  return result.output;
+}
+
 module.exports = {
   runAI,
+  runAIWithMetadata,
 };
