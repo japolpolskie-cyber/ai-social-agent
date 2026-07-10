@@ -12,15 +12,35 @@ const {
 
 const pipelineRunner = require("./pipelineRunner");
 
-const aiGenerationPipeline = require(
-  "./definitions/aiGenerationPipeline"
+const {
+  bootstrapPipelineRegistry,
+} = require(
+  "./registry/bootstrapPipelineRegistry"
 );
+
+// ======================================================
+// Pipeline Identity
+// ======================================================
+
+const PIPELINE_NAME = "ai-generation";
 
 // ======================================================
 // Execute Pipeline
 // ======================================================
 
 async function execute(input = {}) {
+  const pipelineRegistry =
+    bootstrapPipelineRegistry();
+
+  const pipelineDefinition =
+    pipelineRegistry.get(PIPELINE_NAME);
+
+  if (!pipelineDefinition) {
+    throw new Error(
+      `Pipeline "${PIPELINE_NAME}" is not registered.`
+    );
+  }
+
   const context = createPipelineContext(input);
 
   context.workflow =
@@ -30,12 +50,12 @@ async function execute(input = {}) {
     input.endpoint || "/ai/generate";
 
   context.metadata.pipelineVersion =
-    aiGenerationPipeline.version;
+    pipelineDefinition.version;
 
   await pipelineRunner.run({
-    name: aiGenerationPipeline.name,
+    name: pipelineDefinition.name,
     context,
-    stages: aiGenerationPipeline.stages,
+    stages: pipelineDefinition.stages,
   });
 
   context.metadata.startedAt =
