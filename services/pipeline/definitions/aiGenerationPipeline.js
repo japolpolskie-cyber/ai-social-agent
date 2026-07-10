@@ -2,6 +2,10 @@
 // AI Generation Pipeline Definition
 // ======================================================
 
+const {
+  createPipelineDefinition,
+} = require("./createPipelineDefinition");
+
 const validateInputStage = require(
   "../stages/validateInputStage"
 );
@@ -26,7 +30,7 @@ const processOutputStage = require(
   "../stages/processOutputStage"
 );
 
-const aiGenerationPipeline = Object.freeze({
+module.exports = createPipelineDefinition({
   name: "ai-generation",
 
   version: "1.0.0",
@@ -34,19 +38,17 @@ const aiGenerationPipeline = Object.freeze({
   description:
     "Generates, validates, repairs, and processes AI social content.",
 
-  stages: Object.freeze([
+  stages: [
     validateInputStage,
     buildContextStage,
     routeModelStage,
     buildPromptStage,
     executeAIStage,
     processOutputStage,
-  ]),
+  ],
 
-  metadata: Object.freeze({
+  metadata: {
     category: "content-generation",
     reusable: true,
-  }),
+  },
 });
-
-module.exports = aiGenerationPipeline;
