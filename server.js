@@ -56,6 +56,10 @@ const systemRoutes = require(
   "./routes/system.routes"
 );
 
+const pipelineRoutes = require(
+  "./routes/pipeline.routes"
+);
+
 // ======================================================
 // Application Setup
 // ======================================================
@@ -93,6 +97,7 @@ app.use("/linkedin", linkedinRoutes);
 app.use("/version", versionRoutes);
 app.use("/providers", providersRoutes);
 app.use("/system", systemRoutes);
+app.use("/pipelines", pipelineRoutes);
 
 // ======================================================
 // Not Found Handler
