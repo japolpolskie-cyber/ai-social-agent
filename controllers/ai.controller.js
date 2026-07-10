@@ -9,7 +9,7 @@ const promptBuilder = require("../services/promptBuilder");
 const responseService = require("../services/responseService");
 const templateDiscovery = require("../services/templateDiscovery");
 const formatterService = require("../services/formatterService");
-const validatorService = require("../services/validatorService");
+const { processOutput } = require("../services/outputProcessor");
 
 async function generate(req, res) {
   try {
@@ -47,6 +47,9 @@ async function generate(req, res) {
       );
     }
 
+    const workflow = `${platform} ${type}`;
+    const endpoint = "/ai/generate";
+
     const context = contextBuilder.build({
       platform,
       type,
@@ -61,33 +64,30 @@ async function generate(req, res) {
 
     const promptResult = promptBuilder.build(context);
 
-    const output = await aiRunner.runAI({
-      workflow: `${platform} ${type}`,
-      endpoint: "/ai/generate",
+    const generatedOutput = await aiRunner.runAI({
+      workflow,
+      endpoint,
       provider: route.provider,
       model: route.model,
       prompt: promptResult.prompt,
     });
 
-    const cleanOutput = formatterService.clean(output);
+    const cleanOutput =
+      formatterService.clean(generatedOutput);
 
-    const validation = validatorService.validate(
-      cleanOutput,
-      {
-        maxCharacters:
-          context.rules?.maxLength || 3000,
-        maxHashtags:
-          context.rules?.maxHashtags || 8,
-        maxEmojis:
-          context.rules?.emojiLimit || 10,
-        requireCTA:
-          Boolean(context.rules?.ctaRequired),
-      }
-    );
+    const processedResult = await processOutput({
+      output: cleanOutput,
+      rules: context.rules || {},
+      context,
+      provider: route.provider,
+      model: route.model,
+      workflow,
+      endpoint,
+    });
 
     return responseService.success(res, {
-      workflow: `${platform} ${type}`,
-      endpoint: "/ai/generate",
+      workflow,
+      endpoint,
 
       routing: {
         provider: route.provider,
@@ -96,8 +96,12 @@ async function generate(req, res) {
       },
 
       template: promptResult.template,
-      output: cleanOutput,
-      validation,
+
+      output: processedResult.output,
+
+      validation: processedResult.validation,
+
+      repair: processedResult.repair,
     });
   } catch (error) {
     return responseService.error(
