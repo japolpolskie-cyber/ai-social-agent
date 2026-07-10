@@ -1,4 +1,12 @@
+// ======================================================
+// Environment
+// ======================================================
+
 require("dotenv").config();
+
+// ======================================================
+// Dependencies
+// ======================================================
 
 const express = require("express");
 const cors = require("cors");
@@ -6,19 +14,63 @@ const cors = require("cors");
 const appConfig = require("./config/app");
 const serverConfig = require("./config/server");
 
-const healthRoutes = require("./routes/health.routes");
-const facebookRoutes = require("./routes/facebook.routes");
-const aiRoutes = require("./routes/ai.routes");
-const linkedinRoutes = require("./routes/linkedin.routes");
-const versionRoutes = require("./routes/version.routes");
-const providersRoutes = require("./routes/providers.routes");
-const systemRoutes = require("./routes/system.routes");
+const applicationLogger = require(
+  "./services/applicationLogger"
+);
+
+const {
+  registerPipelineSubscribers,
+} = require(
+  "./services/pipeline/registerPipelineSubscribers"
+);
+
+// ======================================================
+// Routes
+// ======================================================
+
+const healthRoutes = require(
+  "./routes/health.routes"
+);
+
+const facebookRoutes = require(
+  "./routes/facebook.routes"
+);
+
+const aiRoutes = require(
+  "./routes/ai.routes"
+);
+
+const linkedinRoutes = require(
+  "./routes/linkedin.routes"
+);
+
+const versionRoutes = require(
+  "./routes/version.routes"
+);
+
+const providersRoutes = require(
+  "./routes/providers.routes"
+);
+
+const systemRoutes = require(
+  "./routes/system.routes"
+);
+
+// ======================================================
+// Application Setup
+// ======================================================
 
 const app = express();
+
+registerPipelineSubscribers();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
+
+// ======================================================
+// Root Route
+// ======================================================
 
 app.get("/", (req, res) => {
   res.json({
@@ -30,6 +82,10 @@ app.get("/", (req, res) => {
   });
 });
 
+// ======================================================
+// Application Routes
+// ======================================================
+
 app.use("/ai", aiRoutes);
 app.use("/health", healthRoutes);
 app.use("/facebook", facebookRoutes);
@@ -37,6 +93,10 @@ app.use("/linkedin", linkedinRoutes);
 app.use("/version", versionRoutes);
 app.use("/providers", providersRoutes);
 app.use("/system", systemRoutes);
+
+// ======================================================
+// Not Found Handler
+// ======================================================
 
 app.use((req, res) => {
   res.status(404).json({
@@ -46,17 +106,45 @@ app.use((req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err);
+// ======================================================
+// Error Handler
+// ======================================================
 
-  res.status(500).json({
+app.use((error, req, res, next) => {
+  applicationLogger.error(
+    "Unhandled application error.",
+    {
+      method: req.method,
+      path: req.originalUrl,
+      error: {
+        name: error?.name || "Error",
+        message:
+          error?.message ||
+          "Internal server error",
+        stack: error?.stack || null,
+      },
+    }
+  );
+
+  res.status(error?.statusCode || 500).json({
     success: false,
-    error: err.message || "Internal server error",
+    error:
+      error?.message ||
+      "Internal server error",
   });
 });
 
+// ======================================================
+// Server Startup
+// ======================================================
+
 app.listen(serverConfig.port, () => {
-  console.log(
-    `🚀 ${appConfig.name} v${appConfig.version} running at http://localhost:${serverConfig.port}`
+  applicationLogger.info(
+    `${appConfig.name} server started.`,
+    {
+      version: appConfig.version,
+      port: serverConfig.port,
+      url: `http://localhost:${serverConfig.port}`,
+    }
   );
 });
