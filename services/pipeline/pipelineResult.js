@@ -9,11 +9,11 @@ function createPipelineResult(context) {
 
     routing: {
       provider:
-        context.execution?.provider ||
+        context.aiExecution?.provider ||
         context.route?.provider,
 
       model:
-        context.execution?.model ||
+        context.aiExecution?.model ||
         context.route?.model,
 
       source: context.route?.source,
@@ -23,9 +23,34 @@ function createPipelineResult(context) {
 
     output: context.processed?.output,
 
-    validation: context.processed?.validation,
+    validation:
+      context.processed?.validation,
 
-    repair: context.processed?.repair,
+    repair:
+      context.processed?.repair,
+
+    meta: {
+      pipeline:
+        context.execution?.pipeline,
+
+      pipelineVersion:
+        context.metadata?.pipelineVersion,
+
+      startedAt:
+        context.execution?.startedAt,
+
+      completedAt:
+        context.execution?.completedAt,
+
+      duration:
+        context.execution?.duration || 0,
+
+      completedStages:
+        context.execution?.completedStages || [],
+
+      stages:
+        context.execution?.stageMetrics || [],
+    },
   };
 }
 

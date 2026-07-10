@@ -10,6 +10,8 @@ const {
   createPipelineResult,
 } = require("./pipelineResult");
 
+const pipelineRunner = require("./pipelineRunner");
+
 const validateInputStage = require(
   "./stages/validateInputStage"
 );
@@ -34,6 +36,12 @@ const processOutputStage = require(
   "./stages/processOutputStage"
 );
 
+// ======================================================
+// Pipeline Definition
+// ======================================================
+
+const PIPELINE_NAME = "ai-generation";
+
 const stages = [
   validateInputStage,
   buildContextStage,
@@ -43,27 +51,33 @@ const stages = [
   processOutputStage,
 ];
 
+// ======================================================
+// Execute Pipeline
+// ======================================================
+
 async function execute(input = {}) {
-  const context =
-    createPipelineContext(input);
+  const context = createPipelineContext(input);
 
   context.workflow =
-    `${input.platform} ${input.type}`;
+    `${input.platform || ""} ${input.type || ""}`.trim();
 
   context.endpoint =
     input.endpoint || "/ai/generate";
 
-  const startedAt = Date.now();
+  await pipelineRunner.run({
+    name: PIPELINE_NAME,
+    context,
+    stages,
+  });
 
-  for (const stage of stages) {
-    await stage.execute(context);
-  }
+  context.metadata.startedAt =
+    context.execution.startedAt;
 
   context.metadata.completedAt =
-    new Date().toISOString();
+    context.execution.completedAt;
 
   context.metadata.duration =
-    Date.now() - startedAt;
+    context.execution.duration;
 
   return createPipelineResult(context);
 }

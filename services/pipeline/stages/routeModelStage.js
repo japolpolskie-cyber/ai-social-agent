@@ -13,5 +13,6 @@ function execute(context) {
 }
 
 module.exports = {
+  name: "route-model",
   execute,
 };

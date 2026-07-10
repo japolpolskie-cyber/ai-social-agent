@@ -5,7 +5,7 @@
 const aiRunner = require("../../aiRunner");
 
 async function execute(context) {
-  context.execution =
+  context.aiExecution =
     await aiRunner.runAIWithMetadata({
       workflow: context.workflow,
       endpoint: context.endpoint,
@@ -18,5 +18,6 @@ async function execute(context) {
 }
 
 module.exports = {
+  name: "execute-ai",
   execute,
 };

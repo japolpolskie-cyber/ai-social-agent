@@ -13,13 +13,33 @@ function createPipelineContext(input = {}) {
     route: null,
     prompt: null,
 
-    execution: null,
+    execution: {
+      pipeline: null,
+
+      currentStage: null,
+
+      completedStages: [],
+
+      stageMetrics: [],
+
+      startedAt: null,
+
+      completedAt: null,
+
+      duration: 0,
+    },
+
+    aiExecution: null,
+
     processed: null,
 
     metadata: {
       pipelineVersion: "1.0.0",
+
       startedAt: new Date().toISOString(),
+
       completedAt: null,
+
       duration: 0,
     },
   };

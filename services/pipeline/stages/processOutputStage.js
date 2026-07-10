@@ -8,15 +8,22 @@ const {
 
 async function execute(context) {
   context.processed = await processOutput({
-    output: context.execution?.output,
-    rules: context.contentContext?.rules || {},
-    context: context.contentContext || {},
+    output: context.aiExecution?.output,
+
+    rules:
+      context.contentContext?.rules || {},
+
+    context:
+      context.contentContext || {},
+
     provider:
-      context.execution?.provider ||
+      context.aiExecution?.provider ||
       context.route?.provider,
+
     model:
-      context.execution?.model ||
+      context.aiExecution?.model ||
       context.route?.model,
+
     workflow: context.workflow,
     endpoint: context.endpoint,
   });
@@ -25,5 +32,6 @@ async function execute(context) {
 }
 
 module.exports = {
+  name: "process-output",
   execute,
 };

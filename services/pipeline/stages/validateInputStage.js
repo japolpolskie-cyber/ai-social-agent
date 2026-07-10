@@ -39,5 +39,6 @@ function execute(context) {
 }
 
 module.exports = {
+  name: "validate-input",
   execute,
 };
