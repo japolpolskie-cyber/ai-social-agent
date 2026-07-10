@@ -3,31 +3,8 @@
 // ======================================================
 
 const logger = require("./logger");
-const providerManager = require("./providerManager");
-const modelManager = require("./modelManager");
-
-function normalizeAIError(error) {
-  const message = error?.message || "AI generation failed.";
-
-  if (
-    message.includes("429") ||
-    message.includes("RESOURCE_EXHAUSTED") ||
-    message.toLowerCase().includes("quota")
-  ) {
-    return "AI quota exceeded. Please try again later or switch provider.";
-  }
-
-  if (
-    message.includes("API key") ||
-    message.includes("authentication") ||
-    message.includes("401") ||
-    message.includes("403")
-  ) {
-    return "AI provider authentication failed. Please check your API key.";
-  }
-
-  return message;
-}
+const { executeWithFallback } = require("./fallbackEngine");
+const { normalizeAIError } = require("./aiError");
 
 async function runAI({
   provider,
@@ -43,19 +20,15 @@ async function runAI({
   let modelName = model || "default";
 
   try {
-    providerName = providerManager.resolveProviderName(provider);
-
-    const selectedProvider = providerManager.getActiveProvider(providerName);
-
-    const resolvedModel = modelManager.resolveModel(providerName, model);
-
-    modelName = resolvedModel.name;
-
-    const output = await selectedProvider.generate({
+    const result = await executeWithFallback({
+      provider,
+      model,
       prompt,
-      model: resolvedModel.model,
       options,
     });
+
+    providerName = result.provider;
+    modelName = result.model;
 
     const executionTime = Date.now() - start;
 
@@ -64,21 +37,32 @@ async function runAI({
       endpoint,
       provider: providerName,
       prompt,
-      response: output,
+      response: result.output,
       model: modelName,
       status: "success",
       executionTime,
     });
 
-    return output;
+    return result.output;
   } catch (error) {
     const executionTime = Date.now() - start;
-    const friendlyError = normalizeAIError(error);
+    const friendlyError = normalizeAIError(error.cause || error);
+
+    const attempts = Array.isArray(error.attempts)
+      ? error.attempts
+      : [];
+
+    const lastAttempt = attempts.at(-1);
+
+    if (lastAttempt) {
+      providerName = lastAttempt.provider || providerName;
+      modelName = lastAttempt.model || modelName;
+    }
 
     logger.logRun({
       workflow,
       endpoint,
-      provider: providerName || "unknown",
+      provider: providerName,
       prompt,
       response: friendlyError,
       model: modelName,
@@ -86,7 +70,12 @@ async function runAI({
       executionTime,
     });
 
-    throw new Error(friendlyError);
+    const executionError = new Error(friendlyError);
+
+    executionError.cause = error;
+    executionError.attempts = attempts;
+
+    throw executionError;
   }
 }
 
