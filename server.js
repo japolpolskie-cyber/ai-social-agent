@@ -11,8 +11,13 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-const appConfig = require("./config/app");
-const serverConfig = require("./config/server");
+const appConfig = require(
+  "./config/app"
+);
+
+const serverConfig = require(
+  "./config/server"
+);
 
 const applicationLogger = require(
   "./services/applicationLogger"
@@ -64,6 +69,11 @@ const executionRoutes = require(
   "./routes/execution.routes"
 );
 
+const executionAnalyticsRoutes =
+  require(
+    "./routes/executionAnalytics.routes"
+  );
+
 // ======================================================
 // Application Setup
 // ======================================================
@@ -74,7 +84,9 @@ registerPipelineSubscribers();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
+app.use(
+  express.static("public")
+);
 
 // ======================================================
 // Root Route
@@ -83,10 +95,14 @@ app.use(express.static("public"));
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    name: appConfig.name,
-    version: appConfig.version,
-    environment: appConfig.environment,
-    status: "running",
+    name:
+      appConfig.name,
+    version:
+      appConfig.version,
+    environment:
+      appConfig.environment,
+    status:
+      "running",
   });
 });
 
@@ -94,15 +110,56 @@ app.get("/", (req, res) => {
 // Application Routes
 // ======================================================
 
-app.use("/ai", aiRoutes);
-app.use("/health", healthRoutes);
-app.use("/facebook", facebookRoutes);
-app.use("/linkedin", linkedinRoutes);
-app.use("/version", versionRoutes);
-app.use("/providers", providersRoutes);
-app.use("/system", systemRoutes);
-app.use("/pipelines", pipelineRoutes);
-app.use("/executions", executionRoutes);
+app.use(
+  "/ai",
+  aiRoutes
+);
+
+app.use(
+  "/health",
+  healthRoutes
+);
+
+app.use(
+  "/facebook",
+  facebookRoutes
+);
+
+app.use(
+  "/linkedin",
+  linkedinRoutes
+);
+
+app.use(
+  "/version",
+  versionRoutes
+);
+
+app.use(
+  "/providers",
+  providersRoutes
+);
+
+app.use(
+  "/system",
+  systemRoutes
+);
+
+app.use(
+  "/pipelines",
+  pipelineRoutes
+);
+
+// Must remain before /executions.
+app.use(
+  "/executions/stats",
+  executionAnalyticsRoutes
+);
+
+app.use(
+  "/executions",
+  executionRoutes
+);
 
 // ======================================================
 // Not Found Handler
@@ -111,8 +168,10 @@ app.use("/executions", executionRoutes);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    error: "Endpoint not found",
-    path: req.originalUrl,
+    error:
+      "Endpoint not found",
+    path:
+      req.originalUrl,
   });
 });
 
@@ -120,41 +179,72 @@ app.use((req, res) => {
 // Error Handler
 // ======================================================
 
-app.use((error, req, res, next) => {
-  applicationLogger.error(
-    "Unhandled application error.",
-    {
-      method: req.method,
-      path: req.originalUrl,
-      error: {
-        name: error?.name || "Error",
-        message:
+app.use(
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
+    applicationLogger.error(
+      "Unhandled application error.",
+      {
+        method:
+          req.method,
+
+        path:
+          req.originalUrl,
+
+        error: {
+          name:
+            error?.name ||
+            "Error",
+
+          message:
+            error?.message ||
+            "Internal server error",
+
+          stack:
+            error?.stack ||
+            null,
+        },
+      }
+    );
+
+    res
+      .status(
+        error?.statusCode ||
+        500
+      )
+      .json({
+        success: false,
+
+        error:
           error?.message ||
           "Internal server error",
-        stack: error?.stack || null,
-      },
-    }
-  );
-
-  res.status(error?.statusCode || 500).json({
-    success: false,
-    error:
-      error?.message ||
-      "Internal server error",
-  });
-});
+      });
+  }
+);
 
 // ======================================================
 // Server Startup
 // ======================================================
 
-app.listen(serverConfig.port, () => {
-  applicationLogger.info(
-    `${appConfig.name} server started.`,
-    {
-      version: appConfig.version,
-      port: serverConfig.port,
-      url: `http://localhost:${serverConfig.port}`,
-    }
-  );
-});
+app.listen(
+  serverConfig.port,
+  () => {
+    applicationLogger.info(
+      `${appConfig.name} server started.`,
+      {
+        version:
+          appConfig.version,
+
+        port:
+          serverConfig.port,
+
+        url:
+          `http://localhost:${serverConfig.port}`,
+      }
+    );
+  }
+);

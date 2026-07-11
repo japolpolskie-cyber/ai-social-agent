@@ -19,7 +19,8 @@ function resolveExecutionId(
   return (
     context.execution?.id ||
     context.metadata?.executionId ||
-    request?.configuration?.executionId ||
+    request?.configuration
+      ?.executionId ||
     null
   );
 }
@@ -49,10 +50,41 @@ function resolvePipelineVersion(
   );
 }
 
+function resolveAIState(context) {
+  if (
+    context.ai &&
+    typeof context.ai.snapshot ===
+      "function"
+  ) {
+    return context.ai.snapshot();
+  }
+
+  return {};
+}
+
 function resolveMetadata(
   context,
   request
 ) {
+  const ai =
+    resolveAIState(
+      context
+    );
+
+  const provider =
+    ai.execution?.provider ||
+    ai.route?.provider ||
+    null;
+
+  const model =
+    ai.execution?.model ||
+    ai.route?.model ||
+    null;
+
+  const routeSource =
+    ai.route?.source ||
+    null;
+
   return {
     ...(
       request?.configuration
@@ -64,6 +96,31 @@ function resolveMetadata(
       context.metadata?.execution ||
       {}
     ),
+
+    ...(context.workflow
+      ? {
+          workflow:
+            context.workflow,
+        }
+      : {}),
+
+    ...(provider
+      ? {
+          provider,
+        }
+      : {}),
+
+    ...(model
+      ? {
+          model,
+        }
+      : {}),
+
+    ...(routeSource
+      ? {
+          routeSource,
+        }
+      : {}),
   };
 }
 
