@@ -28,6 +28,12 @@ const {
   "./execution/pipelineExecutionRequest"
 );
 
+const {
+  createRuntimeLifecycleManager,
+} = require(
+  "./lifecycle/runtimeLifecycleManager"
+);
+
 // ======================================================
 // Defaults
 // ======================================================
@@ -139,7 +145,9 @@ function applyExecutionConfiguration(
   context,
   configuration
 ) {
-  ensureContextState(context);
+  ensureContextState(
+    context
+  );
 
   context.execution.id =
     configuration.executionId;
@@ -156,7 +164,9 @@ function applyPipelineMetadata(
   context,
   resolution
 ) {
-  ensureContextState(context);
+  ensureContextState(
+    context
+  );
 
   const definition =
     resolution.definition;
@@ -179,8 +189,12 @@ function applyPipelineMetadata(
   };
 }
 
-function applyExecutionMetadata(context) {
-  ensureContextState(context);
+function applyExecutionMetadata(
+  context
+) {
+  ensureContextState(
+    context
+  );
 
   context.metadata.startedAt =
     context.execution.startedAt ||
@@ -249,49 +263,21 @@ async function execute(command = {}) {
     resolution
   );
 
-  await runtime.initialize(
-    context,
-    request
-  );
-
-  await runtime.beforeExecution(
-    context,
-    request
-  );
-
-  try {
-    await pipelineRunner.run({
-      name:
-        definition.name,
-
-      context,
-
-      stages:
-        definition.stages,
+  const lifecycleManager =
+    createRuntimeLifecycleManager({
+      runtime,
+      runner:
+        pipelineRunner,
     });
 
-    applyExecutionMetadata(
-      context
-    );
+  return lifecycleManager.run({
+    definition,
+    context,
+    request,
 
-    await runtime.afterExecution(
-      context,
-      request
-    );
-
-    return runtime.createResult(
-      context,
-      {
-        request,
-        resolution,
-      }
-    );
-  } finally {
-    await runtime.cleanup(
-      context,
-      request
-    );
-  }
+    onExecutionCompleted:
+      applyExecutionMetadata,
+  });
 }
 
 module.exports = {
