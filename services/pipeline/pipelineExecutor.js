@@ -274,6 +274,7 @@ async function execute(command = {}) {
     definition,
     context,
     request,
+    resolution,
 
     onExecutionCompleted:
       applyExecutionMetadata,

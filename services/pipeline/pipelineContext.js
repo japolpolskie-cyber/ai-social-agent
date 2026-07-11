@@ -47,6 +47,9 @@ function createPipelineContext(input = {}) {
         0,
     },
 
+    executionRecord:
+      null,
+
     metadata: {
       executionId:
         null,

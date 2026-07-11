@@ -12,6 +12,12 @@ const {
   "./createRuntimeLifecycle"
 );
 
+const {
+  createPipelineExecutionRecord,
+} = require(
+  "../execution-record/executionRecord"
+);
+
 // ======================================================
 // Lifecycle Error Normalization
 // ======================================================
@@ -21,7 +27,9 @@ function normalizeLifecycleError(
   phase
 ) {
   if (
-    PipelineError.isPipelineError(error)
+    PipelineError.isPipelineError(
+      error
+    )
   ) {
     if (!error.stage) {
       error.stage =
@@ -76,7 +84,8 @@ function attachCleanupFailure(
 
   const primaryDetails =
     primaryError.details &&
-    typeof primaryError.details === "object"
+    typeof primaryError.details ===
+      "object"
       ? primaryError.details
       : {};
 
@@ -186,9 +195,12 @@ function createRuntimeLifecycleManager({
     definition,
     context,
     request,
+    resolution,
     onExecutionCompleted = null,
   } = {}) {
-    let primaryError = null;
+    let primaryError =
+      null;
+
     let result;
 
     try {
@@ -216,14 +228,10 @@ function createRuntimeLifecycleManager({
         );
       }
 
-      try {
-        await lifecycle.execute({
-          definition,
-          context,
-        });
-      } catch (error) {
-        throw error;
-      }
+      await lifecycle.execute({
+        definition,
+        context,
+      });
 
       if (
         typeof onExecutionCompleted ===
@@ -251,38 +259,47 @@ function createRuntimeLifecycleManager({
           context,
           {
             request,
+            resolution,
           }
         );
-
-      return result;
     } catch (error) {
       primaryError =
         error;
-
-      throw error;
-    } finally {
-      try {
-        await lifecycle.cleanup(
-          context,
-          request
-        );
-      } catch (error) {
-        const cleanupError =
-          normalizeLifecycleError(
-            error,
-            "cleanup"
-          );
-
-        if (primaryError) {
-          attachCleanupFailure(
-            primaryError,
-            cleanupError
-          );
-        } else {
-          throw cleanupError;
-        }
-      }
     }
+
+    try {
+      await lifecycle.cleanup(
+        context,
+        request
+      );
+    } catch (error) {
+      const cleanupError =
+        normalizeLifecycleError(
+          error,
+          "cleanup"
+        );
+
+      primaryError =
+        attachCleanupFailure(
+          primaryError,
+          cleanupError
+        );
+    }
+
+    context.executionRecord =
+      createPipelineExecutionRecord({
+        context,
+        request,
+        resolution,
+        error:
+          primaryError,
+      });
+
+    if (primaryError) {
+      throw primaryError;
+    }
+
+    return result;
   }
 
   return Object.freeze({
