@@ -139,8 +139,12 @@ async function list(options = {}) {
   );
 }
 
-async function count() {
-  return activeStore.count();
+async function count(
+  options = {}
+) {
+  return activeStore.count(
+    options
+  );
 }
 
 async function remove(executionId) {

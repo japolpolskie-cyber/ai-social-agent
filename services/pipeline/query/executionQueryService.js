@@ -22,31 +22,72 @@ const {
 // Query Options
 // ======================================================
 
+function normalizeOptionalString(
+  value
+) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized =
+    value.trim();
+
+  return normalized || undefined;
+}
+
+function normalizeLimit(value) {
+  return (
+    Number.isInteger(value) &&
+    value > 0
+  )
+    ? value
+    : undefined;
+}
+
+function normalizeOffset(value) {
+  return (
+    Number.isInteger(value) &&
+    value >= 0
+  )
+    ? value
+    : 0;
+}
+
 function normalizeQueryOptions(
   options = {}
 ) {
   return {
     pipeline:
-      typeof options.pipeline ===
-      "string"
-        ? options.pipeline.trim()
-        : undefined,
+      normalizeOptionalString(
+        options.pipeline
+      ),
 
     status:
-      typeof options.status ===
-      "string"
-        ? options.status.trim()
-        : undefined,
+      normalizeOptionalString(
+        options.status
+      ),
 
     limit:
-      Number.isInteger(options.limit)
-        ? options.limit
-        : undefined,
+      normalizeLimit(
+        options.limit
+      ),
 
     offset:
-      Number.isInteger(options.offset)
-        ? options.offset
-        : undefined,
+      normalizeOffset(
+        options.offset
+      ),
+  };
+}
+
+function createCountOptions(
+  queryOptions
+) {
+  return {
+    pipeline:
+      queryOptions.pipeline,
+
+    status:
+      queryOptions.status,
   };
 }
 
@@ -74,19 +115,35 @@ async function getExecutionHistory(
       options
     );
 
-  const executions =
-    await executionStore.list(
+  const [
+    executions,
+    total,
+  ] = await Promise.all([
+    executionStore.list(
       queryOptions
-    );
+    ),
+
+    executionStore.count(
+      createCountOptions(
+        queryOptions
+      )
+    ),
+  ]);
 
   return createExecutionHistory({
-    total:
-      executions.length,
+    total,
 
     executions:
       executions.map(
         createExecutionSummary
       ),
+
+    limit:
+      queryOptions.limit ||
+      null,
+
+    offset:
+      queryOptions.offset,
   });
 }
 
@@ -94,8 +151,19 @@ async function getExecutionHistory(
 // Count
 // ======================================================
 
-async function countExecutions() {
-  return executionStore.count();
+async function countExecutions(
+  options = {}
+) {
+  const queryOptions =
+    normalizeQueryOptions(
+      options
+    );
+
+  return executionStore.count(
+    createCountOptions(
+      queryOptions
+    )
+  );
 }
 
 module.exports = {

@@ -235,8 +235,43 @@ function createMemoryExecutionStore() {
       ]);
     },
 
-    async count() {
-      return records.size;
+    async count(options = {}) {
+        const normalizedOptions =
+            normalizeListOptions(
+              options
+            );
+
+        const pipeline =
+            normalizeExecutionId(
+              normalizedOptions.pipeline
+            );
+
+        const status =
+            normalizeExecutionId(
+              normalizedOptions.status
+            );
+
+        return Array.from(
+            records.values()
+        ).filter(
+            (record) => {
+                if (
+                    pipeline &&
+                    record.pipeline !== pipeline
+                ) {
+                    return false;
+                }
+
+                if (
+                    status &&
+                    record.status !== status
+                ) {
+                    return false;
+                }
+
+                return true;
+            }
+        ).length;
     },
 
     async remove(executionId) {

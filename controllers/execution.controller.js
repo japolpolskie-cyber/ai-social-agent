@@ -88,16 +88,28 @@ async function getExecutions(
         );
 
     const resource =
-      createExecutionCollectionResource({
-        total:
-          history.total,
+        createExecutionCollectionResource({
+            total:
+              history.total,
 
-        executions:
-          history.executions,
+            count:
+              history.count,
 
-        query:
-          queryOptions,
-      });
+            limit:
+              history.limit,
+
+            offset:
+              history.offset,
+
+            hasMore:
+              history.hasMore,
+
+            executions:
+              history.executions,
+
+            query:
+              queryOptions,
+        });
 
     return responseService.success(
       res,

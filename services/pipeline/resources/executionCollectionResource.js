@@ -8,8 +8,24 @@ const {
   "./executionResource"
 );
 
+function normalizeInteger(
+  value,
+  fallback = 0
+) {
+  return (
+    Number.isInteger(value) &&
+    value >= 0
+  )
+    ? value
+    : fallback;
+}
+
 function createExecutionCollectionResource({
   total = 0,
+  count = null,
+  limit = null,
+  offset = 0,
+  hasMore = false,
   executions = [],
   query = {},
 } = {}) {
@@ -19,12 +35,38 @@ function createExecutionCollectionResource({
     );
   }
 
+  const normalizedCount =
+    count === null
+      ? executions.length
+      : normalizeInteger(
+          count,
+          executions.length
+        );
+
   return Object.freeze({
     total:
-      Number.isInteger(total) &&
-      total >= 0
-        ? total
-        : executions.length,
+      normalizeInteger(
+        total,
+        executions.length
+      ),
+
+    count:
+      normalizedCount,
+
+    limit:
+      Number.isInteger(limit) &&
+      limit > 0
+        ? limit
+        : null,
+
+    offset:
+      normalizeInteger(
+        offset,
+        0
+      ),
+
+    hasMore:
+      Boolean(hasMore),
 
     query:
       Object.freeze({
@@ -35,20 +77,6 @@ function createExecutionCollectionResource({
         status:
           query.status ||
           null,
-
-        limit:
-          Number.isInteger(
-            query.limit
-          )
-            ? query.limit
-            : null,
-
-        offset:
-          Number.isInteger(
-            query.offset
-          )
-            ? query.offset
-            : 0,
       }),
 
     executions:

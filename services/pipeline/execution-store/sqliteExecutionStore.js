@@ -299,9 +299,43 @@ function createSQLiteExecutionStore() {
       );
     },
 
-    async count() {
-      return countStatement
-        .get()
+    async count(options = {}) {
+      const where = [];
+      const params = [];
+
+      if (options.pipeline) {
+        where.push(
+          "pipeline = ?"
+        );
+
+        params.push(
+          options.pipeline
+        );
+      }
+
+      if (options.status) {
+        where.push(
+          "status = ?"
+        );
+
+        params.push(
+          options.status
+        );
+      }
+
+      let sql = `
+        SELECT COUNT(*) AS total
+        FROM execution_records
+      `;
+
+      if (where.length > 0) {
+        sql +=
+        ` WHERE ${where.join(" AND ")}`;
+      }
+
+      return db
+        .prepare(sql)
+        .get(...params)
         .total;
     },
 
