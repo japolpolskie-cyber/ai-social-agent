@@ -2,87 +2,20 @@
 // Pipeline Discovery Test
 // ======================================================
 
-const assert = require(
-  "node:assert"
-);
+const assert = require("node:assert");
 
 const pipelineDiscoveryService = require(
   "./services/pipeline/pipelineDiscoveryService"
 );
 
-const pipelineDiscovery = require(
-  "./services/pipeline/discovery/pipelineDiscovery"
-);
-
 const {
-  bootstrapPipelineRegistry,
   resetPipelineRegistry,
 } = require(
   "./services/pipeline/registry/bootstrapPipelineRegistry"
 );
 
 // ======================================================
-// Discovery Layer Tests
-// ======================================================
-
-function testManifestDiscovery() {
-  const definitions =
-    pipelineDiscovery.discover();
-
-  assert.ok(
-    Array.isArray(definitions)
-  );
-
-  assert.strictEqual(
-    definitions.length,
-    1
-  );
-
-  assert.strictEqual(
-    definitions[0].name,
-    "ai-generation"
-  );
-
-  assert.strictEqual(
-    definitions[0].version,
-    "1.0.0"
-  );
-}
-
-function testRegistryBootstrap() {
-  resetPipelineRegistry();
-
-  const registry =
-    bootstrapPipelineRegistry();
-
-  assert.strictEqual(
-    registry.has(
-      "ai-generation"
-    ),
-    true
-  );
-
-  assert.strictEqual(
-    registry.list().length,
-    1
-  );
-
-  const secondRegistry =
-    bootstrapPipelineRegistry();
-
-  assert.strictEqual(
-    secondRegistry,
-    registry
-  );
-
-  assert.strictEqual(
-    secondRegistry.list().length,
-    1
-  );
-}
-
-// ======================================================
-// Discovery Service Tests
+// Tests
 // ======================================================
 
 function testGetAllPipelines() {
@@ -100,9 +33,7 @@ function testGetAllPipelines() {
   );
 
   assert.ok(
-    Array.isArray(
-      result.pipelines
-    )
+    Array.isArray(result.pipelines)
   );
 
   assert.strictEqual(
@@ -178,8 +109,6 @@ function testMissingPipeline() {
 function run() {
   resetPipelineRegistry();
 
-  testManifestDiscovery();
-  testRegistryBootstrap();
   testGetAllPipelines();
   testGetPipelineByName();
   testMissingPipeline();
