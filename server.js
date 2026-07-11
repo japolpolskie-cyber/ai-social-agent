@@ -60,6 +60,10 @@ const pipelineRoutes = require(
   "./routes/pipeline.routes"
 );
 
+const executionRoutes = require(
+  "./routes/execution.routes"
+);
+
 // ======================================================
 // Application Setup
 // ======================================================
@@ -98,6 +102,7 @@ app.use("/version", versionRoutes);
 app.use("/providers", providersRoutes);
 app.use("/system", systemRoutes);
 app.use("/pipelines", pipelineRoutes);
+app.use("/executions", executionRoutes);
 
 // ======================================================
 // Not Found Handler

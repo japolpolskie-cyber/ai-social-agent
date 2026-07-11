@@ -21,6 +21,7 @@ const queryService = require(
 );
 
 async function run() {
+  executionStore.resetExecutionStore();
 
   await executionStore.clear();
 
