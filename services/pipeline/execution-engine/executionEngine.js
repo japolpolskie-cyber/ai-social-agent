@@ -28,6 +28,12 @@ const {
   "./createExecutionEngine"
 );
 
+const {
+  createPipelineExecutionState,
+} = require(
+  "../execution-state/executionState"
+);
+
 // ======================================================
 // Context Validation
 // ======================================================
@@ -53,39 +59,6 @@ function validateContext(context) {
   }
 
   return context;
-}
-
-function ensureExecutionState(context) {
-  validateContext(context);
-
-  if (
-    !context.execution ||
-    typeof context.execution !== "object" ||
-    Array.isArray(context.execution)
-  ) {
-    context.execution = {};
-  }
-
-  const execution =
-    context.execution;
-
-  if (
-    !Array.isArray(
-      execution.completedStages
-    )
-  ) {
-    execution.completedStages = [];
-  }
-
-  if (
-    !Array.isArray(
-      execution.stageMetrics
-    )
-  ) {
-    execution.stageMetrics = [];
-  }
-
-  return execution;
 }
 
 // ======================================================
@@ -230,6 +203,8 @@ function createPipelineExecutionEngine({
   pipelineName,
   stageCount,
 } = {}) {
+  validateContext(context);
+
   const normalizedPipelineName =
     normalizePipelineName(
       pipelineName
@@ -241,45 +216,22 @@ function createPipelineExecutionEngine({
       ? stageCount
       : 0;
 
-  const execution =
-    ensureExecutionState(
+  const executionState =
+    createPipelineExecutionState(
       context
     );
 
-  let pipelineStartedAt = null;
   let pipelineFailure = null;
 
   const engine =
     createExecutionEngine({
       async initializeExecution() {
-        execution.pipeline =
-          normalizedPipelineName;
+        executionState.initialize(
+          normalizedPipelineName
+        );
 
-        execution.currentStage =
-          null;
-
-        execution.completedStages =
-          [];
-
-        execution.stageMetrics =
-          [];
-
-        execution.startedAt =
-          null;
-
-        execution.completedAt =
-          null;
-
-        execution.duration =
-          0;
-
-        pipelineStartedAt =
-          Date.now();
-
-        execution.startedAt =
-          new Date(
-            pipelineStartedAt
-          ).toISOString();
+        const snapshot =
+          executionState.snapshot();
 
         await publishEvent({
           name:
@@ -295,7 +247,7 @@ function createPipelineExecutionEngine({
             "running",
 
           timestamp:
-            execution.startedAt,
+            snapshot.startedAt,
 
           metadata: {
             stageCount:
@@ -303,7 +255,7 @@ function createPipelineExecutionEngine({
           },
         });
 
-        return execution;
+        return snapshot;
       },
 
       async startStage({
@@ -317,10 +269,9 @@ function createPipelineExecutionEngine({
           );
 
         const startedAt =
-          Date.now();
-
-        execution.currentStage =
-          normalizedStageName;
+          executionState.startStage(
+            normalizedStageName
+          );
 
         await publishEvent({
           name:
@@ -383,11 +334,8 @@ function createPipelineExecutionEngine({
             completedAt,
           });
 
-        execution.completedStages.push(
-          stageName
-        );
-
-        execution.stageMetrics.push(
+        executionState.completeStage(
+          stageName,
           metric
         );
 
@@ -455,7 +403,7 @@ function createPipelineExecutionEngine({
             completedAt,
           });
 
-        execution.stageMetrics.push(
+        executionState.failStage(
           metric
         );
 
@@ -499,20 +447,10 @@ function createPipelineExecutionEngine({
       },
 
       async completeExecution() {
-        const completedAt =
-          Date.now();
+        executionState.completeExecution();
 
-        execution.completedAt =
-          new Date(
-            completedAt
-          ).toISOString();
-
-        execution.duration =
-          completedAt -
-          pipelineStartedAt;
-
-        execution.currentStage =
-          null;
+        const snapshot =
+          executionState.snapshot();
 
         await publishEvent({
           name:
@@ -528,23 +466,21 @@ function createPipelineExecutionEngine({
             "success",
 
           timestamp:
-            execution.completedAt,
+            snapshot.completedAt,
 
           duration:
-            execution.duration,
+            snapshot.duration,
 
           metadata: {
-            completedStages: [
-              ...execution.completedStages,
-            ],
+            completedStages:
+              snapshot.completedStages,
 
-            stageMetrics: [
-              ...execution.stageMetrics,
-            ],
+            stageMetrics:
+              snapshot.stageMetrics,
           },
         });
 
-        return execution;
+        return snapshot;
       },
 
       async failExecution(error) {
@@ -559,7 +495,9 @@ function createPipelineExecutionEngine({
                 "Pipeline execution failed.",
 
               stage:
-                execution.currentStage ||
+                executionState
+                  .snapshot()
+                  .currentStage ||
                 "execution-engine",
 
               statusCode:
@@ -568,20 +506,10 @@ function createPipelineExecutionEngine({
             }
           );
 
-        const completedAt =
-          Date.now();
+        executionState.failExecution();
 
-        execution.completedAt =
-          new Date(
-            completedAt
-          ).toISOString();
-
-        execution.duration =
-          completedAt -
-          pipelineStartedAt;
-
-        execution.currentStage =
-          null;
+        const snapshot =
+          executionState.snapshot();
 
         await publishEvent({
           name:
@@ -600,19 +528,17 @@ function createPipelineExecutionEngine({
             "failed",
 
           timestamp:
-            execution.completedAt,
+            snapshot.completedAt,
 
           duration:
-            execution.duration,
+            snapshot.duration,
 
           metadata: {
-            completedStages: [
-              ...execution.completedStages,
-            ],
+            completedStages:
+              snapshot.completedStages,
 
-            stageMetrics: [
-              ...execution.stageMetrics,
-            ],
+            stageMetrics:
+              snapshot.stageMetrics,
           },
 
           error:
@@ -623,7 +549,7 @@ function createPipelineExecutionEngine({
       },
 
       getExecution() {
-        return execution;
+        return executionState.snapshot();
       },
     });
 
