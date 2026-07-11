@@ -2,54 +2,72 @@
 // AI Pipeline Context
 // ======================================================
 
+const {
+  createPipelineAIContext,
+} = require(
+  "./ai-context/aiContext"
+);
+
 function createPipelineContext(input = {}) {
   return {
     input,
 
-    workflow: "",
-    endpoint: "",
+    workflow:
+      "",
 
-    contentContext: null,
-    route: null,
-    prompt: null,
+    endpoint:
+      "",
+
+    ai:
+      createPipelineAIContext(),
 
     execution: {
-      id: null,
+      id:
+        null,
 
-      pipeline: null,
+      pipeline:
+        null,
 
-      currentStage: null,
+      currentStage:
+        null,
 
-      completedStages: [],
+      completedStages:
+        [],
 
-      stageMetrics: [],
+      stageMetrics:
+        [],
 
-      startedAt: null,
+      startedAt:
+        null,
 
-      completedAt: null,
+      completedAt:
+        null,
 
-      duration: 0,
+      duration:
+        0,
     },
 
-    aiExecution: null,
-
-    processed: null,
-
     metadata: {
-      executionId: null,
+      executionId:
+        null,
 
-      execution: {},
+      execution:
+        {},
 
-      pipelineVersion: "1.0.0",
+      pipelineVersion:
+        "1.0.0",
 
-      pipeline: null,
+      pipeline:
+        null,
 
       startedAt:
         new Date().toISOString(),
 
-      completedAt: null,
+      completedAt:
+        null,
 
-      duration: 0,
+      duration:
+        0,
     },
   };
 }

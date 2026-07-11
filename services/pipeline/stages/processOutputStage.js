@@ -4,34 +4,52 @@
 
 const {
   processOutput,
-} = require("../../outputProcessor");
+} = require(
+  "../../outputProcessor"
+);
 
 async function execute(context) {
-  context.processed = await processOutput({
-    output: context.aiExecution?.output,
+  const ai =
+    context.ai.snapshot();
 
-    rules:
-      context.contentContext?.rules || {},
+  const processed =
+    await processOutput({
+      output:
+        ai.execution?.output,
 
-    context:
-      context.contentContext || {},
+      rules:
+        ai.contentContext?.rules ||
+        {},
 
-    provider:
-      context.aiExecution?.provider ||
-      context.route?.provider,
+      context:
+        ai.contentContext ||
+        {},
 
-    model:
-      context.aiExecution?.model ||
-      context.route?.model,
+      provider:
+        ai.execution?.provider ||
+        ai.route?.provider,
 
-    workflow: context.workflow,
-    endpoint: context.endpoint,
-  });
+      model:
+        ai.execution?.model ||
+        ai.route?.model,
+
+      workflow:
+        context.workflow,
+
+      endpoint:
+        context.endpoint,
+    });
+
+  context.ai.setProcessed(
+    processed
+  );
 
   return context;
 }
 
 module.exports = {
-  name: "process-output",
+  name:
+    "process-output",
+
   execute,
 };

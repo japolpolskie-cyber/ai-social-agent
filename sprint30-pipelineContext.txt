@@ -1,0 +1,59 @@
+// ======================================================
+// AI Pipeline Context
+// ======================================================
+
+function createPipelineContext(input = {}) {
+  return {
+    input,
+
+    workflow: "",
+    endpoint: "",
+
+    contentContext: null,
+    route: null,
+    prompt: null,
+
+    execution: {
+      id: null,
+
+      pipeline: null,
+
+      currentStage: null,
+
+      completedStages: [],
+
+      stageMetrics: [],
+
+      startedAt: null,
+
+      completedAt: null,
+
+      duration: 0,
+    },
+
+    aiExecution: null,
+
+    processed: null,
+
+    metadata: {
+      executionId: null,
+
+      execution: {},
+
+      pipelineVersion: "1.0.0",
+
+      pipeline: null,
+
+      startedAt:
+        new Date().toISOString(),
+
+      completedAt: null,
+
+      duration: 0,
+    },
+  };
+}
+
+module.exports = {
+  createPipelineContext,
+};

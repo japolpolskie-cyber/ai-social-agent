@@ -3,6 +3,9 @@
 // ======================================================
 
 function createPipelineResult(context) {
+  const ai =
+    context.ai.snapshot();
+
   return {
     workflow:
       context.workflow,
@@ -12,28 +15,28 @@ function createPipelineResult(context) {
 
     routing: {
       provider:
-        context.aiExecution?.provider ||
-        context.route?.provider,
+        ai.execution?.provider ||
+        ai.route?.provider,
 
       model:
-        context.aiExecution?.model ||
-        context.route?.model,
+        ai.execution?.model ||
+        ai.route?.model,
 
       source:
-        context.route?.source,
+        ai.route?.source,
     },
 
     template:
-      context.prompt?.template,
+      ai.prompt?.template,
 
     output:
-      context.processed?.output,
+      ai.processed?.output,
 
     validation:
-      context.processed?.validation,
+      ai.processed?.validation,
 
     repair:
-      context.processed?.repair,
+      ai.processed?.repair,
 
     meta: {
       executionId:
@@ -65,11 +68,13 @@ function createPipelineResult(context) {
         0,
 
       completedStages:
-        context.execution?.completedStages ||
+        context.execution
+          ?.completedStages ||
         [],
 
       stages:
-        context.execution?.stageMetrics ||
+        context.execution
+          ?.stageMetrics ||
         [],
     },
   };

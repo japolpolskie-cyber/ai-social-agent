@@ -2,17 +2,29 @@
 // Route Model Stage
 // ======================================================
 
-const modelRouter = require("../../modelRouter");
+const modelRouter = require(
+  "../../modelRouter"
+);
 
 function execute(context) {
-  context.route = modelRouter.route(
-    context.contentContext
+  const ai =
+    context.ai.snapshot();
+
+  const route =
+    modelRouter.route(
+      ai.contentContext
+    );
+
+  context.ai.setRoute(
+    route
   );
 
   return context;
 }
 
 module.exports = {
-  name: "route-model",
+  name:
+    "route-model",
+
   execute,
 };

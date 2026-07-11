@@ -2,17 +2,29 @@
 // Build Prompt Stage
 // ======================================================
 
-const promptBuilder = require("../../promptBuilder");
+const promptBuilder = require(
+  "../../promptBuilder"
+);
 
 function execute(context) {
-  context.prompt = promptBuilder.build(
-    context.contentContext
+  const ai =
+    context.ai.snapshot();
+
+  const prompt =
+    promptBuilder.build(
+      ai.contentContext
+    );
+
+  context.ai.setPrompt(
+    prompt
   );
 
   return context;
 }
 
 module.exports = {
-  name: "build-prompt",
+  name:
+    "build-prompt",
+
   execute,
 };

@@ -2,16 +2,26 @@
 // Build Context Stage
 // ======================================================
 
-const contextBuilder = require("../../contextBuilder");
+const contextBuilder = require(
+  "../../contextBuilder"
+);
 
 function execute(context) {
-  context.contentContext =
-    contextBuilder.build(context.input);
+  const contentContext =
+    contextBuilder.build(
+      context.input
+    );
+
+  context.ai.setContentContext(
+    contentContext
+  );
 
   return context;
 }
 
 module.exports = {
-  name: "build-context",
+  name:
+    "build-context",
+
   execute,
 };
