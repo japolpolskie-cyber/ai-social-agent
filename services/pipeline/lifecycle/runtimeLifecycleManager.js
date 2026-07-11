@@ -18,6 +18,10 @@ const {
   "../execution-record/executionRecord"
 );
 
+const executionStore = require(
+  "../execution-store/executionStore"
+);
+
 // ======================================================
 // Lifecycle Error Normalization
 // ======================================================
@@ -105,6 +109,51 @@ function attachCleanupFailure(
   };
 
   return primaryError;
+}
+
+// ======================================================
+// Store Failure Handling
+// ======================================================
+
+function normalizeStoreError(error) {
+  return {
+    code:
+      error?.code ||
+      "PIPELINE_EXECUTION_STORE_FAILED",
+
+    message:
+      error?.message ||
+      "Pipeline execution record could not be stored.",
+  };
+}
+
+async function storeExecutionRecord(
+  context,
+  record
+) {
+  try {
+    await executionStore.save(
+      record
+    );
+
+    return true;
+  } catch (error) {
+    if (
+      !context.metadata ||
+      typeof context.metadata !==
+        "object"
+    ) {
+      context.metadata = {};
+    }
+
+    context.metadata
+      .executionStoreError =
+      normalizeStoreError(
+        error
+      );
+
+    return false;
+  }
 }
 
 // ======================================================
@@ -291,9 +340,15 @@ function createRuntimeLifecycleManager({
         context,
         request,
         resolution,
+
         error:
           primaryError,
       });
+
+    await storeExecutionRecord(
+      context,
+      context.executionRecord
+    );
 
     if (primaryError) {
       throw primaryError;
