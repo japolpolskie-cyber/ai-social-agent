@@ -22,40 +22,18 @@ const {
   "./resolution/pipelineResolver"
 );
 
+const {
+  createPipelineExecutionRequest,
+} = require(
+  "./execution/pipelineExecutionRequest"
+);
+
 // ======================================================
 // Defaults
 // ======================================================
 
 const DEFAULT_PIPELINE_NAME =
   "ai-generation";
-
-// ======================================================
-// Input Validation
-// ======================================================
-
-function normalizeInput(input) {
-  if (
-    input === undefined ||
-    input === null
-  ) {
-    return {};
-  }
-
-  if (
-    typeof input !== "object" ||
-    Array.isArray(input)
-  ) {
-    throw new PipelineError({
-      code: "PIPELINE_INPUT_INVALID",
-      message:
-        "Pipeline execution input must be an object.",
-      stage: "pipeline-executor",
-      statusCode: 400,
-    });
-  }
-
-  return input;
-}
 
 // ======================================================
 // Resolver Factory
@@ -67,6 +45,7 @@ function createResolver() {
 
   return createPipelineResolver({
     registry,
+
     defaultPipelineName:
       DEFAULT_PIPELINE_NAME,
   });
@@ -86,11 +65,16 @@ function validateRuntime(definition) {
     typeof runtime.createResult !== "function"
   ) {
     throw new PipelineError({
-      code: "PIPELINE_RUNTIME_INVALID",
+      code:
+        "PIPELINE_RUNTIME_INVALID",
+
       message:
         `Pipeline "${definition?.name || "unknown"}" ` +
         "does not provide a valid runtime.",
-      stage: "pipeline-executor",
+
+      stage:
+        "pipeline-executor",
+
       statusCode: 500,
     });
   }
@@ -99,22 +83,86 @@ function validateRuntime(definition) {
 }
 
 // ======================================================
+// Context Validation
+// ======================================================
+
+function validateContext(
+  context,
+  definition
+) {
+  if (
+    !context ||
+    typeof context !== "object" ||
+    Array.isArray(context)
+  ) {
+    throw new PipelineError({
+      code:
+        "PIPELINE_CONTEXT_INVALID",
+
+      message:
+        `Pipeline "${definition.name}" runtime ` +
+        "must create a valid context object.",
+
+      stage:
+        "pipeline-executor",
+
+      statusCode: 500,
+    });
+  }
+
+  return context;
+}
+
+// ======================================================
 // Metadata
 // ======================================================
+
+function ensureContextMetadata(context) {
+  if (
+    !context.metadata ||
+    typeof context.metadata !== "object" ||
+    Array.isArray(context.metadata)
+  ) {
+    context.metadata = {};
+  }
+
+  if (
+    !context.execution ||
+    typeof context.execution !== "object" ||
+    Array.isArray(context.execution)
+  ) {
+    context.execution = {};
+  }
+}
+
+function applyRequestMetadata(
+  context,
+  request
+) {
+  ensureContextMetadata(context);
+
+  const executionId =
+    request.options.executionId;
+
+  context.execution.id =
+    executionId;
+
+  context.metadata.executionId =
+    executionId;
+
+  context.metadata.execution = {
+    ...request.options.metadata,
+  };
+}
 
 function applyPipelineMetadata(
   context,
   resolution
 ) {
+  ensureContextMetadata(context);
+
   const definition =
     resolution.definition;
-
-  if (
-    !context.metadata ||
-    typeof context.metadata !== "object"
-  ) {
-    context.metadata = {};
-  }
 
   context.metadata.pipelineVersion =
     definition.version;
@@ -135,41 +183,35 @@ function applyPipelineMetadata(
 }
 
 function applyExecutionMetadata(context) {
-  if (
-    !context.metadata ||
-    typeof context.metadata !== "object"
-  ) {
-    context.metadata = {};
-  }
+  ensureContextMetadata(context);
 
   context.metadata.startedAt =
-    context.execution?.startedAt || null;
+    context.execution.startedAt || null;
 
   context.metadata.completedAt =
-    context.execution?.completedAt || null;
+    context.execution.completedAt || null;
 
   context.metadata.duration =
-    context.execution?.duration || 0;
+    context.execution.duration || 0;
 }
 
 // ======================================================
-// Execute
+// Execution
 // ======================================================
 
-async function execute({
-  pipelineName = null,
-  input = {},
-  endpoint = null,
-} = {}) {
-  const normalizedInput =
-    normalizeInput(input);
+async function execute(command = {}) {
+  const request =
+    createPipelineExecutionRequest(
+      command
+    );
 
   const resolver =
     createResolver();
 
   const resolution =
     resolver.resolve({
-      pipelineName,
+      pipelineName:
+        request.pipelineName,
     });
 
   const definition =
@@ -179,27 +221,26 @@ async function execute({
     validateRuntime(definition);
 
   const context =
-    runtime.createContext(
-      normalizedInput,
-      {
-        endpoint,
-        resolution,
-      }
+    validateContext(
+      runtime.createContext(
+        request.input,
+        {
+          endpoint:
+            request.endpoint,
+
+          resolution,
+
+          options:
+            request.options,
+        }
+      ),
+      definition
     );
 
-  if (
-    !context ||
-    typeof context !== "object"
-  ) {
-    throw new PipelineError({
-      code: "PIPELINE_CONTEXT_INVALID",
-      message:
-        `Pipeline "${definition.name}" runtime ` +
-        "must create a valid context object.",
-      stage: "pipeline-executor",
-      statusCode: 500,
-    });
-  }
+  applyRequestMetadata(
+    context,
+    request
+  );
 
   applyPipelineMetadata(
     context,
@@ -207,16 +248,23 @@ async function execute({
   );
 
   await pipelineRunner.run({
-    name: definition.name,
+    name:
+      definition.name,
+
     context,
-    stages: definition.stages,
+
+    stages:
+      definition.stages,
   });
 
-  applyExecutionMetadata(context);
+  applyExecutionMetadata(
+    context
+  );
 
   return runtime.createResult(
     context,
     {
+      request,
       resolution,
     }
   );

@@ -14,6 +14,8 @@ function createPipelineContext(input = {}) {
     prompt: null,
 
     execution: {
+      id: null,
+
       pipeline: null,
 
       currentStage: null,
@@ -34,9 +36,16 @@ function createPipelineContext(input = {}) {
     processed: null,
 
     metadata: {
+      executionId: null,
+
+      execution: {},
+
       pipelineVersion: "1.0.0",
 
-      startedAt: new Date().toISOString(),
+      pipeline: null,
+
+      startedAt:
+        new Date().toISOString(),
 
       completedAt: null,
 

@@ -28,6 +28,17 @@ async function execute(input = {}) {
     endpoint:
       input.endpoint ||
       "/ai/generate",
+
+    options: {
+      executionId:
+        input.executionId ||
+        null,
+
+      metadata: {
+        source:
+          "ai-api",
+      },
+    },
   });
 }
 

@@ -82,6 +82,9 @@ async function executePipeline(req, res) {
 
         endpoint:
           `/pipelines/${req.params.name}/execute`,
+
+        options:
+          req.body?.options || {},
       });
 
     return responseService.success(
