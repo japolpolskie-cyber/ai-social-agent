@@ -20,7 +20,29 @@ async function getExecutions(
 ) {
   try {
     const history =
-      await executionQueryService.getExecutionHistory();
+      await executionQueryService.getExecutionHistory(
+        {
+          pipeline:
+            req.query.pipeline,
+
+          status:
+            req.query.status,
+
+          limit:
+            req.query.limit
+              ? Number(
+                  req.query.limit
+                )
+              : undefined,
+
+          offset:
+            req.query.offset
+              ? Number(
+                  req.query.offset
+                )
+              : undefined,
+        }
+      );
 
     return responseService.success(
       res,

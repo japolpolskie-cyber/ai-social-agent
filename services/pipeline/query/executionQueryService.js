@@ -19,6 +19,38 @@ const {
 );
 
 // ======================================================
+// Query Options
+// ======================================================
+
+function normalizeQueryOptions(
+  options = {}
+) {
+  return {
+    pipeline:
+      typeof options.pipeline ===
+      "string"
+        ? options.pipeline.trim()
+        : undefined,
+
+    status:
+      typeof options.status ===
+      "string"
+        ? options.status.trim()
+        : undefined,
+
+    limit:
+      Number.isInteger(options.limit)
+        ? options.limit
+        : undefined,
+
+    offset:
+      Number.isInteger(options.offset)
+        ? options.offset
+        : undefined,
+  };
+}
+
+// ======================================================
 // Get Execution
 // ======================================================
 
@@ -37,9 +69,14 @@ async function getExecution(
 async function getExecutionHistory(
   options = {}
 ) {
+  const queryOptions =
+    normalizeQueryOptions(
+      options
+    );
+
   const executions =
     await executionStore.list(
-      options
+      queryOptions
     );
 
   return createExecutionHistory({
@@ -63,8 +100,6 @@ async function countExecutions() {
 
 module.exports = {
   getExecution,
-
   getExecutionHistory,
-
   countExecutions,
 };

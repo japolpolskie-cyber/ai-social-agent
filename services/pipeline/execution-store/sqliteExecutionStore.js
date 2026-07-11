@@ -92,61 +92,58 @@ function mapRow(row) {
 
 const insertStatement =
   db.prepare(`
-INSERT OR REPLACE INTO execution_records(
-execution_id,
-pipeline,
-pipeline_version,
-status,
-endpoint,
-started_at,
-completed_at,
-duration,
-completed_stages,
-stage_metrics,
-metadata,
-error
-)
-VALUES(
-@execution_id,
-@pipeline,
-@pipeline_version,
-@status,
-@endpoint,
-@started_at,
-@completed_at,
-@duration,
-@completed_stages,
-@stage_metrics,
-@metadata,
-@error
-)
-`);
+    INSERT OR REPLACE INTO execution_records (
+      execution_id,
+      pipeline,
+      pipeline_version,
+      status,
+      endpoint,
+      started_at,
+      completed_at,
+      duration,
+      completed_stages,
+      stage_metrics,
+      metadata,
+      error
+    ) VALUES (
+      @execution_id,
+      @pipeline,
+      @pipeline_version,
+      @status,
+      @endpoint,
+      @started_at,
+      @completed_at,
+      @duration,
+      @completed_stages,
+      @stage_metrics,
+      @metadata,
+      @error
+    )
+  `);
 
 const getStatement =
   db.prepare(`
-SELECT *
-FROM execution_records
-WHERE execution_id = ?
-`);
+    SELECT *
+    FROM execution_records
+    WHERE execution_id = ?
+  `);
 
 const deleteStatement =
   db.prepare(`
-DELETE
-FROM execution_records
-WHERE execution_id = ?
-`);
+    DELETE FROM execution_records
+    WHERE execution_id = ?
+  `);
 
 const countStatement =
   db.prepare(`
-SELECT COUNT(*) total
-FROM execution_records
-`);
+    SELECT COUNT(*) AS total
+    FROM execution_records
+  `);
 
 const clearStatement =
   db.prepare(`
-DELETE
-FROM execution_records
-`);
+    DELETE FROM execution_records
+  `);
 
 // ======================================================
 // Factory
@@ -154,7 +151,6 @@ FROM execution_records
 
 function createSQLiteExecutionStore() {
   return createExecutionStore({
-
     async save(record) {
       insertStatement.run({
         execution_id:
@@ -205,40 +201,115 @@ function createSQLiteExecutionStore() {
       return record;
     },
 
-    async get(id) {
+    async get(executionId) {
       return mapRow(
-        getStatement.get(id)
+        getStatement.get(
+          executionId
+        )
       );
     },
 
-    async has(id) {
+    async has(executionId) {
       return (
-        getStatement.get(id) !=
-        null
+        getStatement.get(
+          executionId
+        ) !== undefined
       );
     },
 
-    async list() {
+    async list(options = {}) {
+      const where = [];
+      const params = [];
+
+      if (options.pipeline) {
+        where.push(
+          "pipeline = ?"
+        );
+
+        params.push(
+          options.pipeline
+        );
+      }
+
+      if (options.status) {
+        where.push(
+          "status = ?"
+        );
+
+        params.push(
+          options.status
+        );
+      }
+
+      let sql = `
+        SELECT *
+        FROM execution_records
+      `;
+
+      if (where.length > 0) {
+        sql +=
+          ` WHERE ${where.join(" AND ")}`;
+      }
+
+      sql +=
+        " ORDER BY created_at DESC";
+
+      const hasLimit =
+        Number.isInteger(
+          options.limit
+        ) &&
+        options.limit > 0;
+
+      const hasOffset =
+        Number.isInteger(
+          options.offset
+        ) &&
+        options.offset >= 0;
+
+      if (hasLimit) {
+        sql +=
+          " LIMIT ?";
+
+        params.push(
+          options.limit
+        );
+      } else if (hasOffset) {
+        sql +=
+          " LIMIT -1";
+      }
+
+      if (hasOffset) {
+        sql +=
+          " OFFSET ?";
+
+        params.push(
+          options.offset
+        );
+      }
+
       const rows =
-        db.prepare(`
-SELECT *
-FROM execution_records
-ORDER BY created_at DESC
-`).all();
+        db.prepare(sql).all(
+          ...params
+        );
 
       return Object.freeze(
-        rows.map(mapRow)
+        rows.map(
+          mapRow
+        )
       );
     },
 
     async count() {
-      return countStatement.get()
+      return countStatement
+        .get()
         .total;
     },
 
-    async remove(id) {
+    async remove(executionId) {
       const result =
-        deleteStatement.run(id);
+        deleteStatement.run(
+          executionId
+        );
 
       return (
         result.changes > 0
@@ -248,7 +319,6 @@ ORDER BY created_at DESC
     async clear() {
       clearStatement.run();
     },
-
   });
 }
 
