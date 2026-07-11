@@ -14,6 +14,12 @@ const {
   createPipelineResult,
 } = require("../pipelineResult");
 
+const {
+  createDefaultPipelineRuntime,
+} = require(
+  "../runtime/defaultPipelineRuntime"
+);
+
 const validateInputStage = require(
   "../stages/validateInputStage"
 );
@@ -64,49 +70,54 @@ function createResult(context) {
   return createPipelineResult(context);
 }
 
+const runtime =
+  createDefaultPipelineRuntime({
+    createContext,
+    createResult,
+  });
+
 // ======================================================
 // Definition
 // ======================================================
 
-module.exports = createPipelineDefinition({
-  name: "ai-generation",
+module.exports =
+  createPipelineDefinition({
+    name: "ai-generation",
 
-  version: "1.0.0",
+    version: "1.0.0",
 
-  description:
-    "Generates, validates, repairs, and processes AI social content.",
+    description:
+      "Generates, validates, repairs, and processes AI social content.",
 
-  metadata: {
-    category: "content-generation",
+    metadata: {
+      category:
+        "content-generation",
 
-    tags: [
-      "ai",
-      "social-content",
-      "generation",
-      "validation",
-      "repair",
+      tags: [
+        "ai",
+        "social-content",
+        "generation",
+        "validation",
+        "repair",
+      ],
+
+      reusable: true,
+
+      experimental: false,
+
+      deprecated: false,
+
+      visibility: "internal",
+    },
+
+    runtime,
+
+    stages: [
+      validateInputStage,
+      buildContextStage,
+      routeModelStage,
+      buildPromptStage,
+      executeAIStage,
+      processOutputStage,
     ],
-
-    reusable: true,
-
-    experimental: false,
-
-    deprecated: false,
-
-    visibility: "internal",
-  },
-
-  runtime: {
-    createContext,
-    createResult,
-  },
-
-  stages: [
-    validateInputStage,
-    buildContextStage,
-    routeModelStage,
-    buildPromptStage,
-    executeAIStage,
-    processOutputStage,
-  ],
-});
+  });

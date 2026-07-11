@@ -7,7 +7,7 @@ const {
 } = require("../models/pipelineMetadata");
 
 // ======================================================
-// String Validation
+// Validation
 // ======================================================
 
 function assertNonEmptyString(value, field) {
@@ -39,10 +39,6 @@ function normalizeDescription(description) {
 
   return description.trim();
 }
-
-// ======================================================
-// Stage Validation
-// ======================================================
 
 function assertStages(stages) {
   if (
@@ -81,26 +77,24 @@ function assertRuntime(runtime) {
     );
   }
 
-  if (
-    typeof runtime.createContext !== "function"
-  ) {
-    throw new TypeError(
-      "Pipeline runtime must provide createContext()."
-    );
-  }
+  const requiredFunctions = [
+    "createContext",
+    "initialize",
+    "beforeExecution",
+    "afterExecution",
+    "createResult",
+    "cleanup",
+  ];
 
-  if (
-    typeof runtime.createResult !== "function"
-  ) {
-    throw new TypeError(
-      "Pipeline runtime must provide createResult()."
-    );
-  }
-
-  return Object.freeze({
-    createContext: runtime.createContext,
-    createResult: runtime.createResult,
+  requiredFunctions.forEach((name) => {
+    if (typeof runtime[name] !== "function") {
+      throw new TypeError(
+        `Pipeline runtime must provide "${name}"().`
+      );
+    }
   });
+
+  return runtime;
 }
 
 // ======================================================

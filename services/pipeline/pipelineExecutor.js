@@ -2,31 +2,21 @@
 // Pipeline Executor
 // ======================================================
 
-const PipelineError = require(
-  "./pipelineError"
-);
+const PipelineError = require("./pipelineError");
 
-const pipelineRunner = require(
-  "./pipelineRunner"
-);
+const pipelineRunner = require("./pipelineRunner");
 
 const {
   bootstrapPipelineRegistry,
-} = require(
-  "./registry/bootstrapPipelineRegistry"
-);
+} = require("./registry/bootstrapPipelineRegistry");
 
 const {
   createPipelineResolver,
-} = require(
-  "./resolution/pipelineResolver"
-);
+} = require("./resolution/pipelineResolver");
 
 const {
   createPipelineExecutionRequest,
-} = require(
-  "./execution/pipelineExecutionRequest"
-);
+} = require("./execution/pipelineExecutionRequest");
 
 // ======================================================
 // Defaults
@@ -45,7 +35,6 @@ function createResolver() {
 
   return createPipelineResolver({
     registry,
-
     defaultPipelineName:
       DEFAULT_PIPELINE_NAME,
   });
@@ -59,18 +48,13 @@ function validateRuntime(definition) {
   const runtime =
     definition?.runtime;
 
-  if (
-    !runtime ||
-    typeof runtime.createContext !== "function" ||
-    typeof runtime.createResult !== "function"
-  ) {
+  if (!runtime) {
     throw new PipelineError({
       code:
         "PIPELINE_RUNTIME_INVALID",
 
       message:
-        `Pipeline "${definition?.name || "unknown"}" ` +
-        "does not provide a valid runtime.",
+        `Pipeline "${definition?.name || "unknown"}" has no runtime.`,
 
       stage:
         "pipeline-executor",
@@ -100,8 +84,7 @@ function validateContext(
         "PIPELINE_CONTEXT_INVALID",
 
       message:
-        `Pipeline "${definition.name}" runtime ` +
-        "must create a valid context object.",
+        `Pipeline "${definition.name}" runtime must return a valid context.`,
 
       stage:
         "pipeline-executor",
@@ -118,19 +101,11 @@ function validateContext(
 // ======================================================
 
 function ensureContextMetadata(context) {
-  if (
-    !context.metadata ||
-    typeof context.metadata !== "object" ||
-    Array.isArray(context.metadata)
-  ) {
+  if (!context.metadata) {
     context.metadata = {};
   }
 
-  if (
-    !context.execution ||
-    typeof context.execution !== "object" ||
-    Array.isArray(context.execution)
-  ) {
+  if (!context.execution) {
     context.execution = {};
   }
 }
@@ -141,14 +116,11 @@ function applyRequestMetadata(
 ) {
   ensureContextMetadata(context);
 
-  const executionId =
+  context.execution.id =
     request.options.executionId;
 
-  context.execution.id =
-    executionId;
-
   context.metadata.executionId =
-    executionId;
+    request.options.executionId;
 
   context.metadata.execution = {
     ...request.options.metadata,
@@ -182,24 +154,27 @@ function applyPipelineMetadata(
   };
 }
 
-function applyExecutionMetadata(context) {
+function applyExecutionMetadata(
+  context
+) {
   ensureContextMetadata(context);
 
   context.metadata.startedAt =
-    context.execution.startedAt || null;
+    context.execution.startedAt;
 
   context.metadata.completedAt =
-    context.execution.completedAt || null;
+    context.execution.completedAt;
 
   context.metadata.duration =
-    context.execution.duration || 0;
+    context.execution.duration;
 }
 
 // ======================================================
-// Execution
+// Execute
 // ======================================================
 
 async function execute(command = {}) {
+
   const request =
     createPipelineExecutionRequest(
       command
@@ -247,27 +222,58 @@ async function execute(command = {}) {
     resolution
   );
 
-  await pipelineRunner.run({
-    name:
-      definition.name,
+  // ==========================================
+  // Runtime Lifecycle
+  // ==========================================
 
+  await runtime.initialize(
     context,
-
-    stages:
-      definition.stages,
-  });
-
-  applyExecutionMetadata(
-    context
+    request
   );
 
-  return runtime.createResult(
+  await runtime.beforeExecution(
     context,
-    {
-      request,
-      resolution,
-    }
+    request
   );
+
+  try {
+
+    await pipelineRunner.run({
+      name:
+        definition.name,
+
+      context,
+
+      stages:
+        definition.stages,
+    });
+
+    applyExecutionMetadata(
+      context
+    );
+
+    await runtime.afterExecution(
+      context,
+      request
+    );
+
+    return runtime.createResult(
+      context,
+      {
+        request,
+        resolution,
+      }
+    );
+
+  } finally {
+
+    await runtime.cleanup(
+      context,
+      request
+    );
+
+  }
+
 }
 
 module.exports = {
