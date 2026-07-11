@@ -4,8 +4,11 @@
 
 function createPipelineResult(context) {
   return {
-    workflow: context.workflow,
-    endpoint: context.endpoint,
+    workflow:
+      context.workflow,
+
+    endpoint:
+      context.endpoint,
 
     routing: {
       provider:
@@ -16,12 +19,15 @@ function createPipelineResult(context) {
         context.aiExecution?.model ||
         context.route?.model,
 
-      source: context.route?.source,
+      source:
+        context.route?.source,
     },
 
-    template: context.prompt?.template,
+    template:
+      context.prompt?.template,
 
-    output: context.processed?.output,
+    output:
+      context.processed?.output,
 
     validation:
       context.processed?.validation,
@@ -30,6 +36,18 @@ function createPipelineResult(context) {
       context.processed?.repair,
 
     meta: {
+      executionId:
+        context.execution?.id ||
+        context.metadata?.executionId ||
+        null,
+
+      executionMetadata: {
+        ...(
+          context.metadata?.execution ||
+          {}
+        ),
+      },
+
       pipeline:
         context.execution?.pipeline,
 
@@ -43,13 +61,16 @@ function createPipelineResult(context) {
         context.execution?.completedAt,
 
       duration:
-        context.execution?.duration || 0,
+        context.execution?.duration ||
+        0,
 
       completedStages:
-        context.execution?.completedStages || [],
+        context.execution?.completedStages ||
+        [],
 
       stages:
-        context.execution?.stageMetrics || [],
+        context.execution?.stageMetrics ||
+        [],
     },
   };
 }

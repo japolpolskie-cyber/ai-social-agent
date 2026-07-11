@@ -2,21 +2,31 @@
 // Pipeline Executor
 // ======================================================
 
-const PipelineError = require("./pipelineError");
+const PipelineError = require(
+  "./pipelineError"
+);
 
-const pipelineRunner = require("./pipelineRunner");
+const pipelineRunner = require(
+  "./pipelineRunner"
+);
 
 const {
   bootstrapPipelineRegistry,
-} = require("./registry/bootstrapPipelineRegistry");
+} = require(
+  "./registry/bootstrapPipelineRegistry"
+);
 
 const {
   createPipelineResolver,
-} = require("./resolution/pipelineResolver");
+} = require(
+  "./resolution/pipelineResolver"
+);
 
 const {
   createPipelineExecutionRequest,
-} = require("./execution/pipelineExecutionRequest");
+} = require(
+  "./execution/pipelineExecutionRequest"
+);
 
 // ======================================================
 // Defaults
@@ -35,6 +45,7 @@ function createResolver() {
 
   return createPipelineResolver({
     registry,
+
     defaultPipelineName:
       DEFAULT_PIPELINE_NAME,
   });
@@ -54,7 +65,8 @@ function validateRuntime(definition) {
         "PIPELINE_RUNTIME_INVALID",
 
       message:
-        `Pipeline "${definition?.name || "unknown"}" has no runtime.`,
+        `Pipeline "${definition?.name || "unknown"}" ` +
+        "has no runtime.",
 
       stage:
         "pipeline-executor",
@@ -84,7 +96,8 @@ function validateContext(
         "PIPELINE_CONTEXT_INVALID",
 
       message:
-        `Pipeline "${definition.name}" runtime must return a valid context.`,
+        `Pipeline "${definition.name}" runtime ` +
+        "must return a valid context.",
 
       stage:
         "pipeline-executor",
@@ -97,33 +110,45 @@ function validateContext(
 }
 
 // ======================================================
-// Metadata
+// Context State
 // ======================================================
 
-function ensureContextMetadata(context) {
-  if (!context.metadata) {
+function ensureContextState(context) {
+  if (
+    !context.metadata ||
+    typeof context.metadata !== "object" ||
+    Array.isArray(context.metadata)
+  ) {
     context.metadata = {};
   }
 
-  if (!context.execution) {
+  if (
+    !context.execution ||
+    typeof context.execution !== "object" ||
+    Array.isArray(context.execution)
+  ) {
     context.execution = {};
   }
 }
 
-function applyRequestMetadata(
+// ======================================================
+// Metadata
+// ======================================================
+
+function applyExecutionConfiguration(
   context,
-  request
+  configuration
 ) {
-  ensureContextMetadata(context);
+  ensureContextState(context);
 
   context.execution.id =
-    request.options.executionId;
+    configuration.executionId;
 
   context.metadata.executionId =
-    request.options.executionId;
+    configuration.executionId;
 
   context.metadata.execution = {
-    ...request.options.metadata,
+    ...configuration.metadata,
   };
 }
 
@@ -131,7 +156,7 @@ function applyPipelineMetadata(
   context,
   resolution
 ) {
-  ensureContextMetadata(context);
+  ensureContextState(context);
 
   const definition =
     resolution.definition;
@@ -154,27 +179,27 @@ function applyPipelineMetadata(
   };
 }
 
-function applyExecutionMetadata(
-  context
-) {
-  ensureContextMetadata(context);
+function applyExecutionMetadata(context) {
+  ensureContextState(context);
 
   context.metadata.startedAt =
-    context.execution.startedAt;
+    context.execution.startedAt ||
+    null;
 
   context.metadata.completedAt =
-    context.execution.completedAt;
+    context.execution.completedAt ||
+    null;
 
   context.metadata.duration =
-    context.execution.duration;
+    context.execution.duration ||
+    0;
 }
 
 // ======================================================
-// Execute
+// Execution
 // ======================================================
 
 async function execute(command = {}) {
-
   const request =
     createPipelineExecutionRequest(
       command
@@ -193,7 +218,9 @@ async function execute(command = {}) {
     resolution.definition;
 
   const runtime =
-    validateRuntime(definition);
+    validateRuntime(
+      definition
+    );
 
   const context =
     validateContext(
@@ -205,26 +232,22 @@ async function execute(command = {}) {
 
           resolution,
 
-          options:
-            request.options,
+          configuration:
+            request.configuration,
         }
       ),
       definition
     );
 
-  applyRequestMetadata(
+  applyExecutionConfiguration(
     context,
-    request
+    request.configuration
   );
 
   applyPipelineMetadata(
     context,
     resolution
   );
-
-  // ==========================================
-  // Runtime Lifecycle
-  // ==========================================
 
   await runtime.initialize(
     context,
@@ -237,7 +260,6 @@ async function execute(command = {}) {
   );
 
   try {
-
     await pipelineRunner.run({
       name:
         definition.name,
@@ -264,16 +286,12 @@ async function execute(command = {}) {
         resolution,
       }
     );
-
   } finally {
-
     await runtime.cleanup(
       context,
       request
     );
-
   }
-
 }
 
 module.exports = {

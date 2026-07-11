@@ -1,15 +1,13 @@
 // ======================================================
-// Pipeline Execution Request
+// Pipeline Execution Configuration
 // ======================================================
+
+const {
+  randomUUID,
+} = require("crypto");
 
 const PipelineError = require(
   "../pipelineError"
-);
-
-const {
-  createPipelineExecutionConfig,
-} = require(
-  "./pipelineExecutionConfig"
 );
 
 // ======================================================
@@ -36,27 +34,26 @@ function isPlainObject(value) {
 
 function normalizeObject(
   value,
-  field,
-  defaultValue = {}
+  field
 ) {
   if (
     value === undefined ||
     value === null
   ) {
-    return defaultValue;
+    return {};
   }
 
   if (!isPlainObject(value)) {
     throw new PipelineError({
       code:
-        "PIPELINE_EXECUTION_REQUEST_INVALID",
+        "PIPELINE_EXECUTION_CONFIG_INVALID",
 
       message:
-        `Pipeline execution "${field}" ` +
+        `Pipeline execution configuration "${field}" ` +
         "must be an object.",
 
       stage:
-        "pipeline-execution-request",
+        "pipeline-execution-config",
 
       statusCode: 400,
 
@@ -73,33 +70,6 @@ function normalizeObject(
 // String Normalization
 // ======================================================
 
-function normalizeRequiredName(value) {
-  if (
-    typeof value !== "string" ||
-    value.trim().length === 0
-  ) {
-    throw new PipelineError({
-      code:
-        "PIPELINE_NAME_INVALID",
-
-      message:
-        "Pipeline execution requires a valid pipeline name.",
-
-      stage:
-        "pipeline-execution-request",
-
-      statusCode: 400,
-
-      details: {
-        field:
-          "pipelineName",
-      },
-    });
-  }
-
-  return value.trim();
-}
-
 function normalizeOptionalString(
   value,
   field
@@ -114,14 +84,14 @@ function normalizeOptionalString(
   if (typeof value !== "string") {
     throw new PipelineError({
       code:
-        "PIPELINE_EXECUTION_REQUEST_INVALID",
+        "PIPELINE_EXECUTION_CONFIG_INVALID",
 
       message:
-        `Pipeline execution "${field}" ` +
+        `Pipeline execution configuration "${field}" ` +
         "must be a string.",
 
       stage:
-        "pipeline-execution-request",
+        "pipeline-execution-config",
 
       statusCode: 400,
 
@@ -138,51 +108,46 @@ function normalizeOptionalString(
 }
 
 // ======================================================
+// Execution ID
+// ======================================================
+
+function resolveExecutionId(value) {
+  return (
+    normalizeOptionalString(
+      value,
+      "executionId"
+    ) ||
+    randomUUID()
+  );
+}
+
+// ======================================================
 // Factory
 // ======================================================
 
-function createPipelineExecutionRequest({
-  pipelineName,
-  input = {},
-  endpoint = null,
-  options = {},
+function createPipelineExecutionConfig({
+  executionId = null,
+  metadata = {},
 } = {}) {
-  const normalizedInput =
+  const normalizedMetadata =
     normalizeObject(
-      input,
-      "input"
-    );
-
-  const normalizedOptions =
-    normalizeObject(
-      options,
-      "options"
+      metadata,
+      "metadata"
     );
 
   return Object.freeze({
-    pipelineName:
-      normalizeRequiredName(
-        pipelineName
+    executionId:
+      resolveExecutionId(
+        executionId
       ),
 
-    input:
+    metadata:
       Object.freeze({
-        ...normalizedInput,
+        ...normalizedMetadata,
       }),
-
-    endpoint:
-      normalizeOptionalString(
-        endpoint,
-        "endpoint"
-      ),
-
-    configuration:
-      createPipelineExecutionConfig(
-        normalizedOptions
-      ),
   });
 }
 
 module.exports = {
-  createPipelineExecutionRequest,
+  createPipelineExecutionConfig,
 };
