@@ -2,6 +2,38 @@
 // Execution Resource
 // ======================================================
 
+function cloneObject(
+  value
+) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return {};
+  }
+
+  return {
+    ...value,
+  };
+}
+
+function cloneNullableObject(
+  value
+) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  return {
+    ...value,
+  };
+}
+
 function createExecutionResource(
   execution
 ) {
@@ -62,12 +94,20 @@ function createExecutionResource(
       ),
 
     metadata:
-      Object.freeze({
-        ...(
-          execution.metadata ||
-          {}
-        ),
-      }),
+      Object.freeze(
+        cloneObject(
+          execution.metadata
+        )
+      ),
+
+    requestSnapshot:
+      execution.requestSnapshot
+        ? Object.freeze(
+            cloneNullableObject(
+              execution.requestSnapshot
+            )
+          )
+        : null,
 
     error:
       execution.error

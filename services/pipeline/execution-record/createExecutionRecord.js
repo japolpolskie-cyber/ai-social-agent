@@ -73,17 +73,13 @@ function normalizeDuration(duration) {
   return duration;
 }
 
-function normalizeArray(
-  value
-) {
+function normalizeArray(value) {
   return Array.isArray(value)
     ? [...value]
     : [];
 }
 
-function normalizeObject(
-  value
-) {
+function normalizeObject(value) {
   if (
     !value ||
     typeof value !== "object" ||
@@ -95,6 +91,28 @@ function normalizeObject(
   return {
     ...value,
   };
+}
+
+function normalizeNullableObject(value) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return null;
+  }
+
+  if (
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    throw new TypeError(
+      "Execution record requestSnapshot must be an object or null."
+    );
+  }
+
+  return Object.freeze({
+    ...value,
+  });
 }
 
 function normalizeError(error) {
@@ -142,6 +160,7 @@ function createExecutionRecord({
   completedStages = [],
   stageMetrics = [],
   metadata = {},
+  requestSnapshot = null,
   error = null,
 } = {}) {
   const normalizedStages =
@@ -221,6 +240,11 @@ function createExecutionRecord({
         normalizeObject(
           metadata
         )
+      ),
+
+    requestSnapshot:
+      normalizeNullableObject(
+        requestSnapshot
       ),
 
     error:

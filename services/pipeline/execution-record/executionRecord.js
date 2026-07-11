@@ -8,6 +8,12 @@ const {
   "./createExecutionRecord"
 );
 
+const {
+  createPipelineExecutionSnapshot,
+} = require(
+  "../execution-snapshot/executionSnapshot"
+);
+
 // ======================================================
 // Resolution Helpers
 // ======================================================
@@ -124,6 +130,18 @@ function resolveMetadata(
   };
 }
 
+function resolveRequestSnapshot(
+  request
+) {
+  if (!request) {
+    return null;
+  }
+
+  return createPipelineExecutionSnapshot(
+    request
+  );
+}
+
 // ======================================================
 // Factory
 // ======================================================
@@ -200,6 +218,11 @@ function createPipelineExecutionRecord({
     metadata:
       resolveMetadata(
         context,
+        request
+      ),
+
+    requestSnapshot:
+      resolveRequestSnapshot(
         request
       ),
 

@@ -79,6 +79,11 @@ function mapRow(row) {
         row.metadata
       ) || {},
 
+    requestSnapshot:
+      deserialize(
+        row.request_snapshot
+      ),
+
     error:
       deserialize(
         row.error
@@ -104,6 +109,7 @@ const insertStatement =
       completed_stages,
       stage_metrics,
       metadata,
+      request_snapshot,
       error
     ) VALUES (
       @execution_id,
@@ -117,6 +123,7 @@ const insertStatement =
       @completed_stages,
       @stage_metrics,
       @metadata,
+      @request_snapshot,
       @error
     )
   `);
@@ -132,12 +139,6 @@ const deleteStatement =
   db.prepare(`
     DELETE FROM execution_records
     WHERE execution_id = ?
-  `);
-
-const countStatement =
-  db.prepare(`
-    SELECT COUNT(*) AS total
-    FROM execution_records
   `);
 
 const clearStatement =
@@ -190,6 +191,11 @@ function createSQLiteExecutionStore() {
         metadata:
           serialize(
             record.metadata
+          ),
+
+        request_snapshot:
+          serialize(
+            record.requestSnapshot
           ),
 
         error:
@@ -330,7 +336,7 @@ function createSQLiteExecutionStore() {
 
       if (where.length > 0) {
         sql +=
-        ` WHERE ${where.join(" AND ")}`;
+          ` WHERE ${where.join(" AND ")}`;
       }
 
       return db

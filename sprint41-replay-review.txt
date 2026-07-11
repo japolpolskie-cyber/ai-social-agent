@@ -1,0 +1,896 @@
+
+====================================================
+services\pipeline\execution-record\createExecutionRecord.js
+====================================================
+// ======================================================
+// Pipeline Execution Record Builder
+// ======================================================
+
+const VALID_STATUSES =
+  new Set([
+    "success",
+    "failed",
+  ]);
+
+// ======================================================
+// Validation
+// ======================================================
+
+function assertNonEmptyString(
+  value,
+  field
+) {
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0
+  ) {
+    throw new TypeError(
+      `Execution record requires a valid "${field}".`
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeNullableString(
+  value,
+  field
+) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Execution record "${field}" must be a string or null.`
+    );
+  }
+
+  const normalized =
+    value.trim();
+
+  return normalized || null;
+}
+
+function normalizeStatus(status) {
+  if (!VALID_STATUSES.has(status)) {
+    throw new TypeError(
+      'Execution record status must be "success" or "failed".'
+    );
+  }
+
+  return status;
+}
+
+function normalizeDuration(duration) {
+  if (
+    typeof duration !== "number" ||
+    !Number.isFinite(duration) ||
+    duration < 0
+  ) {
+    return 0;
+  }
+
+  return duration;
+}
+
+function normalizeArray(
+  value
+) {
+  return Array.isArray(value)
+    ? [...value]
+    : [];
+}
+
+function normalizeObject(
+  value
+) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return {};
+  }
+
+  return {
+    ...value,
+  };
+}
+
+function normalizeError(error) {
+  if (!error) {
+    return null;
+  }
+
+  if (
+    typeof error.toJSON ===
+    "function"
+  ) {
+    return Object.freeze({
+      ...error.toJSON(),
+    });
+  }
+
+  return Object.freeze({
+    code:
+      error.code ||
+      "PIPELINE_EXECUTION_FAILED",
+
+    message:
+      error.message ||
+      "Pipeline execution failed.",
+
+    stage:
+      error.stage ||
+      null,
+  });
+}
+
+// ======================================================
+// Builder
+// ======================================================
+
+function createExecutionRecord({
+  executionId,
+  pipeline,
+  pipelineVersion = null,
+  status,
+  endpoint = null,
+  startedAt = null,
+  completedAt = null,
+  duration = 0,
+  completedStages = [],
+  stageMetrics = [],
+  metadata = {},
+  error = null,
+} = {}) {
+  const normalizedStages =
+    normalizeArray(
+      completedStages
+    );
+
+  const normalizedMetrics =
+    normalizeArray(
+      stageMetrics
+    ).map(
+      (metric) =>
+        Object.freeze({
+          ...metric,
+        })
+    );
+
+  return Object.freeze({
+    executionId:
+      assertNonEmptyString(
+        executionId,
+        "executionId"
+      ),
+
+    pipeline:
+      assertNonEmptyString(
+        pipeline,
+        "pipeline"
+      ),
+
+    pipelineVersion:
+      normalizeNullableString(
+        pipelineVersion,
+        "pipelineVersion"
+      ),
+
+    status:
+      normalizeStatus(
+        status
+      ),
+
+    endpoint:
+      normalizeNullableString(
+        endpoint,
+        "endpoint"
+      ),
+
+    startedAt:
+      normalizeNullableString(
+        startedAt,
+        "startedAt"
+      ),
+
+    completedAt:
+      normalizeNullableString(
+        completedAt,
+        "completedAt"
+      ),
+
+    duration:
+      normalizeDuration(
+        duration
+      ),
+
+    completedStages:
+      Object.freeze(
+        normalizedStages
+      ),
+
+    stageMetrics:
+      Object.freeze(
+        normalizedMetrics
+      ),
+
+    metadata:
+      Object.freeze(
+        normalizeObject(
+          metadata
+        )
+      ),
+
+    error:
+      normalizeError(
+        error
+      ),
+  });
+}
+
+module.exports = {
+  createExecutionRecord,
+};
+
+====================================================
+services\pipeline\execution-record\executionRecord.js
+====================================================
+// ======================================================
+// Pipeline Execution Record
+// ======================================================
+
+const {
+  createExecutionRecord,
+} = require(
+  "./createExecutionRecord"
+);
+
+// ======================================================
+// Resolution Helpers
+// ======================================================
+
+function resolveExecutionId(
+  context,
+  request
+) {
+  return (
+    context.execution?.id ||
+    context.metadata?.executionId ||
+    request?.configuration
+      ?.executionId ||
+    null
+  );
+}
+
+function resolvePipelineName(
+  context,
+  resolution
+) {
+  return (
+    context.execution?.pipeline ||
+    resolution?.resolvedPipeline ||
+    context.metadata?.pipeline
+      ?.resolvedName ||
+    null
+  );
+}
+
+function resolvePipelineVersion(
+  context,
+  resolution
+) {
+  return (
+    context.metadata
+      ?.pipelineVersion ||
+    resolution?.definition?.version ||
+    null
+  );
+}
+
+function resolveAIState(context) {
+  if (
+    context.ai &&
+    typeof context.ai.snapshot ===
+      "function"
+  ) {
+    return context.ai.snapshot();
+  }
+
+  return {};
+}
+
+function resolveMetadata(
+  context,
+  request
+) {
+  const ai =
+    resolveAIState(
+      context
+    );
+
+  const provider =
+    ai.execution?.provider ||
+    ai.route?.provider ||
+    null;
+
+  const model =
+    ai.execution?.model ||
+    ai.route?.model ||
+    null;
+
+  const routeSource =
+    ai.route?.source ||
+    null;
+
+  return {
+    ...(
+      request?.configuration
+        ?.metadata ||
+      {}
+    ),
+
+    ...(
+      context.metadata?.execution ||
+      {}
+    ),
+
+    ...(context.workflow
+      ? {
+          workflow:
+            context.workflow,
+        }
+      : {}),
+
+    ...(provider
+      ? {
+          provider,
+        }
+      : {}),
+
+    ...(model
+      ? {
+          model,
+        }
+      : {}),
+
+    ...(routeSource
+      ? {
+          routeSource,
+        }
+      : {}),
+  };
+}
+
+// ======================================================
+// Factory
+// ======================================================
+
+function createPipelineExecutionRecord({
+  context,
+  request,
+  resolution,
+  error = null,
+} = {}) {
+  if (
+    !context ||
+    typeof context !== "object" ||
+    Array.isArray(context)
+  ) {
+    throw new TypeError(
+      "Pipeline execution record requires a valid context."
+    );
+  }
+
+  const execution =
+    context.execution ||
+    {};
+
+  return createExecutionRecord({
+    executionId:
+      resolveExecutionId(
+        context,
+        request
+      ),
+
+    pipeline:
+      resolvePipelineName(
+        context,
+        resolution
+      ),
+
+    pipelineVersion:
+      resolvePipelineVersion(
+        context,
+        resolution
+      ),
+
+    status:
+      error
+        ? "failed"
+        : "success",
+
+    endpoint:
+      context.endpoint ||
+      request?.endpoint ||
+      null,
+
+    startedAt:
+      execution.startedAt ||
+      null,
+
+    completedAt:
+      execution.completedAt ||
+      null,
+
+    duration:
+      execution.duration ||
+      0,
+
+    completedStages:
+      execution.completedStages ||
+      [],
+
+    stageMetrics:
+      execution.stageMetrics ||
+      [],
+
+    metadata:
+      resolveMetadata(
+        context,
+        request
+      ),
+
+    error,
+  });
+}
+
+module.exports = {
+  createPipelineExecutionRecord,
+};
+
+====================================================
+database\schema\executionRecordsSchema.js
+====================================================
+// ======================================================
+// Execution Records Schema
+// ======================================================
+
+function initializeExecutionRecordsSchema(
+  db
+) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS execution_records (
+      execution_id TEXT PRIMARY KEY,
+
+      pipeline TEXT,
+
+      pipeline_version TEXT,
+
+      status TEXT,
+
+      endpoint TEXT,
+
+      started_at TEXT,
+
+      completed_at TEXT,
+
+      duration INTEGER,
+
+      completed_stages TEXT,
+
+      stage_metrics TEXT,
+
+      metadata TEXT,
+
+      error TEXT,
+
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+module.exports = {
+  initializeExecutionRecordsSchema,
+};
+
+====================================================
+services\pipeline\execution-store\sqliteExecutionStore.js
+====================================================
+// ======================================================
+// SQLite Pipeline Execution Store
+// ======================================================
+
+const db = require(
+  "../../../database/db"
+);
+
+const {
+  createExecutionStore,
+} = require(
+  "./createExecutionStore"
+);
+
+// ======================================================
+// Helpers
+// ======================================================
+
+function serialize(value) {
+  return JSON.stringify(
+    value ?? null
+  );
+}
+
+function deserialize(value) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function mapRow(row) {
+  if (!row) {
+    return null;
+  }
+
+  return Object.freeze({
+    executionId:
+      row.execution_id,
+
+    pipeline:
+      row.pipeline,
+
+    pipelineVersion:
+      row.pipeline_version,
+
+    status:
+      row.status,
+
+    endpoint:
+      row.endpoint,
+
+    startedAt:
+      row.started_at,
+
+    completedAt:
+      row.completed_at,
+
+    duration:
+      row.duration,
+
+    completedStages:
+      deserialize(
+        row.completed_stages
+      ) || [],
+
+    stageMetrics:
+      deserialize(
+        row.stage_metrics
+      ) || [],
+
+    metadata:
+      deserialize(
+        row.metadata
+      ) || {},
+
+    error:
+      deserialize(
+        row.error
+      ),
+  });
+}
+
+// ======================================================
+// Statements
+// ======================================================
+
+const insertStatement =
+  db.prepare(`
+    INSERT OR REPLACE INTO execution_records (
+      execution_id,
+      pipeline,
+      pipeline_version,
+      status,
+      endpoint,
+      started_at,
+      completed_at,
+      duration,
+      completed_stages,
+      stage_metrics,
+      metadata,
+      error
+    ) VALUES (
+      @execution_id,
+      @pipeline,
+      @pipeline_version,
+      @status,
+      @endpoint,
+      @started_at,
+      @completed_at,
+      @duration,
+      @completed_stages,
+      @stage_metrics,
+      @metadata,
+      @error
+    )
+  `);
+
+const getStatement =
+  db.prepare(`
+    SELECT *
+    FROM execution_records
+    WHERE execution_id = ?
+  `);
+
+const deleteStatement =
+  db.prepare(`
+    DELETE FROM execution_records
+    WHERE execution_id = ?
+  `);
+
+const countStatement =
+  db.prepare(`
+    SELECT COUNT(*) AS total
+    FROM execution_records
+  `);
+
+const clearStatement =
+  db.prepare(`
+    DELETE FROM execution_records
+  `);
+
+// ======================================================
+// Factory
+// ======================================================
+
+function createSQLiteExecutionStore() {
+  return createExecutionStore({
+    async save(record) {
+      insertStatement.run({
+        execution_id:
+          record.executionId,
+
+        pipeline:
+          record.pipeline,
+
+        pipeline_version:
+          record.pipelineVersion,
+
+        status:
+          record.status,
+
+        endpoint:
+          record.endpoint,
+
+        started_at:
+          record.startedAt,
+
+        completed_at:
+          record.completedAt,
+
+        duration:
+          record.duration,
+
+        completed_stages:
+          serialize(
+            record.completedStages
+          ),
+
+        stage_metrics:
+          serialize(
+            record.stageMetrics
+          ),
+
+        metadata:
+          serialize(
+            record.metadata
+          ),
+
+        error:
+          serialize(
+            record.error
+          ),
+      });
+
+      return record;
+    },
+
+    async get(executionId) {
+      return mapRow(
+        getStatement.get(
+          executionId
+        )
+      );
+    },
+
+    async has(executionId) {
+      return (
+        getStatement.get(
+          executionId
+        ) !== undefined
+      );
+    },
+
+    async list(options = {}) {
+      const where = [];
+      const params = [];
+
+      if (options.pipeline) {
+        where.push(
+          "pipeline = ?"
+        );
+
+        params.push(
+          options.pipeline
+        );
+      }
+
+      if (options.status) {
+        where.push(
+          "status = ?"
+        );
+
+        params.push(
+          options.status
+        );
+      }
+
+      let sql = `
+        SELECT *
+        FROM execution_records
+      `;
+
+      if (where.length > 0) {
+        sql +=
+          ` WHERE ${where.join(" AND ")}`;
+      }
+
+      sql +=
+        " ORDER BY created_at DESC";
+
+      const hasLimit =
+        Number.isInteger(
+          options.limit
+        ) &&
+        options.limit > 0;
+
+      const hasOffset =
+        Number.isInteger(
+          options.offset
+        ) &&
+        options.offset >= 0;
+
+      if (hasLimit) {
+        sql +=
+          " LIMIT ?";
+
+        params.push(
+          options.limit
+        );
+      } else if (hasOffset) {
+        sql +=
+          " LIMIT -1";
+      }
+
+      if (hasOffset) {
+        sql +=
+          " OFFSET ?";
+
+        params.push(
+          options.offset
+        );
+      }
+
+      const rows =
+        db.prepare(sql).all(
+          ...params
+        );
+
+      return Object.freeze(
+        rows.map(
+          mapRow
+        )
+      );
+    },
+
+    async count(options = {}) {
+      const where = [];
+      const params = [];
+
+      if (options.pipeline) {
+        where.push(
+          "pipeline = ?"
+        );
+
+        params.push(
+          options.pipeline
+        );
+      }
+
+      if (options.status) {
+        where.push(
+          "status = ?"
+        );
+
+        params.push(
+          options.status
+        );
+      }
+
+      let sql = `
+        SELECT COUNT(*) AS total
+        FROM execution_records
+      `;
+
+      if (where.length > 0) {
+        sql +=
+        ` WHERE ${where.join(" AND ")}`;
+      }
+
+      return db
+        .prepare(sql)
+        .get(...params)
+        .total;
+    },
+
+    async remove(executionId) {
+      const result =
+        deleteStatement.run(
+          executionId
+        );
+
+      return (
+        result.changes > 0
+      );
+    },
+
+    async clear() {
+      clearStatement.run();
+    },
+  });
+}
+
+module.exports = {
+  createSQLiteExecutionStore,
+};
+
+====================================================
+routes\execution.routes.js
+====================================================
+// ======================================================
+// Execution Routes
+// ======================================================
+
+const express = require(
+  "express"
+);
+
+const router =
+  express.Router();
+
+const executionController =
+  require(
+    "../controllers/execution.controller"
+  );
+
+router.get(
+  "/",
+  executionController.getExecutions
+);
+
+router.get(
+  "/:executionId",
+  executionController.getExecution
+);
+
+module.exports = router;
