@@ -8,12 +8,42 @@ const {
   "./memoryExecutionStore"
 );
 
+const {
+  createSQLiteExecutionStore,
+} = require(
+  "./sqliteExecutionStore"
+);
+
 // ======================================================
 // Default Store
 // ======================================================
 
+const DEFAULT_STORE =
+  (
+    process.env
+      .EXECUTION_STORE ||
+    "sqlite"
+  ).toLowerCase();
+
+function createDefaultStore() {
+  switch (
+    DEFAULT_STORE
+  ) {
+    case "memory":
+      return createMemoryExecutionStore();
+
+    case "sqlite":
+      return createSQLiteExecutionStore();
+
+    default:
+      throw new Error(
+        `Unsupported execution store: ${DEFAULT_STORE}`
+      );
+  }
+}
+
 let activeStore =
-  createMemoryExecutionStore();
+  createDefaultStore();
 
 // ======================================================
 // Store Validation
