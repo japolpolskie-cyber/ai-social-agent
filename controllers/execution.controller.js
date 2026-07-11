@@ -10,6 +10,63 @@ const executionQueryService = require(
   "../services/pipeline/query/executionQueryService"
 );
 
+const {
+  createExecutionResource,
+} = require(
+  "../services/pipeline/resources/executionResource"
+);
+
+const {
+  createExecutionCollectionResource,
+} = require(
+  "../services/pipeline/resources/executionCollectionResource"
+);
+
+// ======================================================
+// Query Helpers
+// ======================================================
+
+function parseInteger(
+  value
+) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return undefined;
+  }
+
+  const parsed =
+    Number(value);
+
+  return Number.isInteger(parsed)
+    ? parsed
+    : undefined;
+}
+
+function createQueryOptions(
+  query = {}
+) {
+  return {
+    pipeline:
+      query.pipeline,
+
+    status:
+      query.status,
+
+    limit:
+      parseInteger(
+        query.limit
+      ),
+
+    offset:
+      parseInteger(
+        query.offset
+      ),
+  };
+}
+
 // ======================================================
 // Get Execution History
 // ======================================================
@@ -19,39 +76,38 @@ async function getExecutions(
   res
 ) {
   try {
-    const history =
-      await executionQueryService.getExecutionHistory(
-        {
-          pipeline:
-            req.query.pipeline,
-
-          status:
-            req.query.status,
-
-          limit:
-            req.query.limit
-              ? Number(
-                  req.query.limit
-                )
-              : undefined,
-
-          offset:
-            req.query.offset
-              ? Number(
-                  req.query.offset
-                )
-              : undefined,
-        }
+    const queryOptions =
+      createQueryOptions(
+        req.query
       );
+
+    const history =
+      await executionQueryService
+        .getExecutionHistory(
+          queryOptions
+        );
+
+    const resource =
+      createExecutionCollectionResource({
+        total:
+          history.total,
+
+        executions:
+          history.executions,
+
+        query:
+          queryOptions,
+      });
 
     return responseService.success(
       res,
-      history
+      resource
     );
   } catch (error) {
     return responseService.error(
       res,
-      error
+      error,
+      error.statusCode || 500
     );
   }
 }
@@ -87,13 +143,17 @@ async function getExecution(
     return responseService.success(
       res,
       {
-        execution,
+        execution:
+          createExecutionResource(
+            execution
+          ),
       }
     );
   } catch (error) {
     return responseService.error(
       res,
-      error
+      error,
+      error.statusCode || 500
     );
   }
 }
