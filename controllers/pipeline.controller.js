@@ -6,6 +6,10 @@ const pipelineDiscoveryService = require(
   "../services/pipeline/pipelineDiscoveryService"
 );
 
+const pipelineExecutor = require(
+  "../services/pipeline/pipelineExecutor"
+);
+
 const responseService = require(
   "../services/responseService"
 );
@@ -62,7 +66,42 @@ function getPipeline(req, res) {
   }
 }
 
+// ======================================================
+// Execute Pipeline
+// ======================================================
+
+async function executePipeline(req, res) {
+  try {
+    const result =
+      await pipelineExecutor.execute({
+        pipelineName:
+          req.params.name,
+
+        input:
+          req.body?.input || {},
+
+        endpoint:
+          `/pipelines/${req.params.name}/execute`,
+      });
+
+    return responseService.success(
+      res,
+      result
+    );
+  } catch (error) {
+    const statusCode =
+      error.statusCode || 500;
+
+    return responseService.error(
+      res,
+      error,
+      statusCode
+    );
+  }
+}
+
 module.exports = {
   getPipelines,
   getPipeline,
+  executePipeline,
 };

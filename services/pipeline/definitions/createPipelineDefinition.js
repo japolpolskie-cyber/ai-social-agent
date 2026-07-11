@@ -7,7 +7,7 @@ const {
 } = require("../models/pipelineMetadata");
 
 // ======================================================
-// Validation
+// String Validation
 // ======================================================
 
 function assertNonEmptyString(value, field) {
@@ -40,6 +40,10 @@ function normalizeDescription(description) {
   return description.trim();
 }
 
+// ======================================================
+// Stage Validation
+// ======================================================
+
 function assertStages(stages) {
   if (
     !Array.isArray(stages) ||
@@ -67,6 +71,39 @@ function assertStages(stages) {
 }
 
 // ======================================================
+// Runtime Validation
+// ======================================================
+
+function assertRuntime(runtime) {
+  if (!runtime || typeof runtime !== "object") {
+    throw new TypeError(
+      "Pipeline definition requires a runtime."
+    );
+  }
+
+  if (
+    typeof runtime.createContext !== "function"
+  ) {
+    throw new TypeError(
+      "Pipeline runtime must provide createContext()."
+    );
+  }
+
+  if (
+    typeof runtime.createResult !== "function"
+  ) {
+    throw new TypeError(
+      "Pipeline runtime must provide createResult()."
+    );
+  }
+
+  return Object.freeze({
+    createContext: runtime.createContext,
+    createResult: runtime.createResult,
+  });
+}
+
+// ======================================================
 // Builder
 // ======================================================
 
@@ -75,6 +112,7 @@ function createPipelineDefinition({
   version,
   description = "",
   metadata = {},
+  runtime,
   stages,
 } = {}) {
   return Object.freeze({
@@ -94,7 +132,11 @@ function createPipelineDefinition({
     metadata:
       createPipelineMetadata(metadata),
 
-    stages: assertStages(stages),
+    runtime:
+      assertRuntime(runtime),
+
+    stages:
+      assertStages(stages),
   });
 }
 

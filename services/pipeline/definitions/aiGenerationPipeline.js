@@ -6,6 +6,14 @@ const {
   createPipelineDefinition,
 } = require("./createPipelineDefinition");
 
+const {
+  createPipelineContext,
+} = require("../pipelineContext");
+
+const {
+  createPipelineResult,
+} = require("../pipelineResult");
+
 const validateInputStage = require(
   "../stages/validateInputStage"
 );
@@ -29,6 +37,36 @@ const executeAIStage = require(
 const processOutputStage = require(
   "../stages/processOutputStage"
 );
+
+// ======================================================
+// Runtime
+// ======================================================
+
+function createContext(
+  input = {},
+  execution = {}
+) {
+  const context =
+    createPipelineContext(input);
+
+  context.workflow =
+    `${input.platform || ""} ${input.type || ""}`.trim();
+
+  context.endpoint =
+    execution.endpoint ||
+    input.endpoint ||
+    "/ai/generate";
+
+  return context;
+}
+
+function createResult(context) {
+  return createPipelineResult(context);
+}
+
+// ======================================================
+// Definition
+// ======================================================
 
 module.exports = createPipelineDefinition({
   name: "ai-generation",
@@ -56,6 +94,11 @@ module.exports = createPipelineDefinition({
     deprecated: false,
 
     visibility: "internal",
+  },
+
+  runtime: {
+    createContext,
+    createResult,
   },
 
   stages: [

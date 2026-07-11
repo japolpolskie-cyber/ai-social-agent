@@ -1,0 +1,1466 @@
+
+====================================================
+services\pipeline\pipelineDiscoveryService.js
+====================================================
+// ======================================================
+// Pipeline Discovery Service
+// ======================================================
+
+const {
+  bootstrapPipelineRegistry,
+} = require(
+  "./registry/bootstrapPipelineRegistry"
+);
+
+const {
+  createPipelineCatalog,
+} = require(
+  "./catalog/pipelineCatalog"
+);
+
+// ======================================================
+// Catalog Factory
+// ======================================================
+
+function getPipelineCatalog() {
+  const pipelineRegistry =
+    bootstrapPipelineRegistry();
+
+  return createPipelineCatalog({
+    registry: pipelineRegistry,
+  });
+}
+
+// ======================================================
+// Discovery Operations
+// ======================================================
+
+function getAllPipelines() {
+  const pipelineCatalog =
+    getPipelineCatalog();
+
+  const pipelines =
+    pipelineCatalog.list();
+
+  return {
+    count: pipelines.length,
+    pipelines,
+  };
+}
+
+function getPipelineByName(name) {
+  const pipelineCatalog =
+    getPipelineCatalog();
+
+  const pipeline =
+    pipelineCatalog.get(name);
+
+  if (!pipeline) {
+    const error = new Error(
+      `Pipeline "${name}" was not found.`
+    );
+
+    error.name =
+      "PipelineNotFoundError";
+
+    error.code =
+      "PIPELINE_NOT_FOUND";
+
+    error.statusCode = 404;
+
+    throw error;
+  }
+
+  return {
+    pipeline,
+  };
+}
+
+module.exports = {
+  getAllPipelines,
+  getPipelineByName,
+};
+
+====================================================
+services\pipeline\pipelineRunner.js
+====================================================
+// ======================================================
+// Pipeline Runner
+// ======================================================
+
+const PipelineError = require("./pipelineError");
+
+const {
+  PIPELINE_EVENTS,
+} = require("./events/pipelineEvents");
+
+const {
+  createPipelineEvent,
+} = require("./events/pipelineEvent");
+
+const pipelineEventBus = require(
+  "./events/pipelineEventBus"
+);
+
+// ======================================================
+// Stage Helpers
+// ======================================================
+
+function getStageName(stage, index) {
+  if (
+    stage &&
+    typeof stage.name === "string" &&
+    stage.name.trim()
+  ) {
+    return stage.name.trim();
+  }
+
+  return `stage-${index + 1}`;
+}
+
+function validateStages(stages) {
+  if (!Array.isArray(stages) || stages.length === 0) {
+    throw new PipelineError({
+      code: "PIPELINE_STAGES_INVALID",
+      message: "Pipeline requires at least one stage.",
+      stage: "pipeline-runner",
+      statusCode: 500,
+    });
+  }
+
+  stages.forEach((stage, index) => {
+    if (!stage || typeof stage.execute !== "function") {
+      throw new PipelineError({
+        code: "PIPELINE_STAGE_INVALID",
+        message:
+          `Pipeline stage at index ${index} must ` +
+          "provide an execute function.",
+        stage: getStageName(stage, index),
+        statusCode: 500,
+      });
+    }
+  });
+}
+
+// ======================================================
+// Execution State
+// ======================================================
+
+function ensureExecutionState(context, pipelineName) {
+  if (!context || typeof context !== "object") {
+    throw new PipelineError({
+      code: "PIPELINE_CONTEXT_INVALID",
+      message: "Pipeline context must be an object.",
+      stage: "pipeline-runner",
+      statusCode: 500,
+    });
+  }
+
+  if (
+    !context.execution ||
+    typeof context.execution !== "object"
+  ) {
+    context.execution = {
+      pipeline: null,
+      currentStage: null,
+      completedStages: [],
+      stageMetrics: [],
+      startedAt: null,
+      completedAt: null,
+      duration: 0,
+    };
+  }
+
+  context.execution.pipeline = pipelineName;
+  context.execution.currentStage = null;
+  context.execution.completedStages = [];
+  context.execution.stageMetrics = [];
+  context.execution.startedAt = null;
+  context.execution.completedAt = null;
+  context.execution.duration = 0;
+
+  return context.execution;
+}
+
+function finalizeExecution(
+  execution,
+  pipelineStartedAt
+) {
+  const pipelineCompletedAt = Date.now();
+
+  execution.completedAt =
+    new Date(pipelineCompletedAt).toISOString();
+
+  execution.duration =
+    pipelineCompletedAt - pipelineStartedAt;
+
+  execution.currentStage = null;
+}
+
+// ======================================================
+// Error Handling
+// ======================================================
+
+function normalizeStageError(error, stageName) {
+  if (PipelineError.isPipelineError(error)) {
+    if (!error.stage) {
+      error.stage = stageName;
+    }
+
+    return error;
+  }
+
+  return new PipelineError({
+    code: error?.code || "PIPELINE_STAGE_FAILED",
+    message:
+      error?.message ||
+      `Pipeline stage "${stageName}" failed.`,
+    stage: stageName,
+    statusCode: error?.statusCode || 500,
+    details: error?.details || null,
+    cause: error,
+  });
+}
+
+// ======================================================
+// Event Helpers
+// ======================================================
+
+function getExecutionId(context) {
+  return (
+    context.execution?.id ||
+    context.metadata?.executionId ||
+    null
+  );
+}
+
+async function publishEvent(eventData) {
+  try {
+    const event = createPipelineEvent(eventData);
+
+    await pipelineEventBus.publish(event);
+  } catch {
+    // Pipeline event failures must never interrupt
+    // the main pipeline execution.
+  }
+}
+
+// ======================================================
+// Pipeline Execution
+// ======================================================
+
+async function run({ name, context, stages }) {
+  const pipelineName =
+    typeof name === "string" && name.trim()
+      ? name.trim()
+      : "unnamed-pipeline";
+
+  validateStages(stages);
+
+  const execution = ensureExecutionState(
+    context,
+    pipelineName
+  );
+
+  const pipelineStartedAt = Date.now();
+
+  execution.startedAt =
+    new Date(pipelineStartedAt).toISOString();
+
+  await publishEvent({
+    name: PIPELINE_EVENTS.PIPELINE_STARTED,
+    pipeline: pipelineName,
+    executionId: getExecutionId(context),
+    status: "running",
+    timestamp: execution.startedAt,
+    metadata: {
+      stageCount: stages.length,
+    },
+  });
+
+  let pipelineFailure = null;
+
+  try {
+    for (
+      let index = 0;
+      index < stages.length;
+      index += 1
+    ) {
+      const stage = stages[index];
+      const stageName = getStageName(stage, index);
+      const stageStartedAt = Date.now();
+
+      execution.currentStage = stageName;
+
+      await publishEvent({
+        name: PIPELINE_EVENTS.STAGE_STARTED,
+        pipeline: pipelineName,
+        executionId: getExecutionId(context),
+        stage: stageName,
+        status: "running",
+        timestamp:
+          new Date(stageStartedAt).toISOString(),
+        metadata: {
+          stageIndex: index,
+          stageNumber: index + 1,
+          totalStages: stages.length,
+        },
+      });
+
+      try {
+        const stageResult =
+          await stage.execute(context);
+
+        if (
+          stageResult !== undefined &&
+          stageResult !== null &&
+          stageResult !== context
+        ) {
+          throw new PipelineError({
+            code: "PIPELINE_STAGE_RESULT_INVALID",
+            message:
+              `Pipeline stage "${stageName}" must ` +
+              "return the existing pipeline context " +
+              "or no value.",
+            stage: stageName,
+            statusCode: 500,
+          });
+        }
+
+        const stageCompletedAt = Date.now();
+
+        const stageMetric = {
+          stage: stageName,
+          status: "success",
+          duration:
+            stageCompletedAt - stageStartedAt,
+          startedAt:
+            new Date(stageStartedAt).toISOString(),
+          completedAt:
+            new Date(stageCompletedAt).toISOString(),
+        };
+
+        execution.completedStages.push(stageName);
+        execution.stageMetrics.push(stageMetric);
+
+        await publishEvent({
+          name: PIPELINE_EVENTS.STAGE_COMPLETED,
+          pipeline: pipelineName,
+          executionId: getExecutionId(context),
+          stage: stageName,
+          status: "success",
+          timestamp: stageMetric.completedAt,
+          duration: stageMetric.duration,
+          metadata: {
+            stageIndex: index,
+            stageNumber: index + 1,
+            totalStages: stages.length,
+          },
+        });
+      } catch (error) {
+        const stageFailedAt = Date.now();
+
+        const normalizedError =
+          normalizeStageError(
+            error,
+            stageName
+          );
+
+        const stageMetric = {
+          stage: stageName,
+          status: "failed",
+          duration:
+            stageFailedAt - stageStartedAt,
+          startedAt:
+            new Date(stageStartedAt).toISOString(),
+          completedAt:
+            new Date(stageFailedAt).toISOString(),
+        };
+
+        execution.stageMetrics.push(stageMetric);
+
+        await publishEvent({
+          name: PIPELINE_EVENTS.STAGE_FAILED,
+          pipeline: pipelineName,
+          executionId: getExecutionId(context),
+          stage: stageName,
+          status: "failed",
+          timestamp: stageMetric.completedAt,
+          duration: stageMetric.duration,
+          metadata: {
+            stageIndex: index,
+            stageNumber: index + 1,
+            totalStages: stages.length,
+          },
+          error: normalizedError,
+        });
+
+        throw normalizedError;
+      }
+    }
+
+    return context;
+  } catch (error) {
+    pipelineFailure = PipelineError.wrap(error, {
+      code: "PIPELINE_EXECUTION_FAILED",
+      message: "Pipeline execution failed.",
+      stage:
+        execution.currentStage ||
+        "pipeline-runner",
+      statusCode: error?.statusCode || 500,
+    });
+
+    throw pipelineFailure;
+  } finally {
+    finalizeExecution(
+      execution,
+      pipelineStartedAt
+    );
+
+    if (pipelineFailure) {
+      await publishEvent({
+        name: PIPELINE_EVENTS.PIPELINE_FAILED,
+        pipeline: pipelineName,
+        executionId: getExecutionId(context),
+        stage: pipelineFailure.stage,
+        status: "failed",
+        timestamp: execution.completedAt,
+        duration: execution.duration,
+        metadata: {
+          completedStages:
+            [...execution.completedStages],
+          stageMetrics:
+            [...execution.stageMetrics],
+        },
+        error: pipelineFailure,
+      });
+    } else {
+      await publishEvent({
+        name: PIPELINE_EVENTS.PIPELINE_COMPLETED,
+        pipeline: pipelineName,
+        executionId: getExecutionId(context),
+        status: "success",
+        timestamp: execution.completedAt,
+        duration: execution.duration,
+        metadata: {
+          completedStages:
+            [...execution.completedStages],
+          stageMetrics:
+            [...execution.stageMetrics],
+        },
+      });
+    }
+  }
+}
+
+module.exports = {
+  run,
+};
+
+====================================================
+services\pipeline\pipelineContext.js
+====================================================
+// ======================================================
+// AI Pipeline Context
+// ======================================================
+
+function createPipelineContext(input = {}) {
+  return {
+    input,
+
+    workflow: "",
+    endpoint: "",
+
+    contentContext: null,
+    route: null,
+    prompt: null,
+
+    execution: {
+      pipeline: null,
+
+      currentStage: null,
+
+      completedStages: [],
+
+      stageMetrics: [],
+
+      startedAt: null,
+
+      completedAt: null,
+
+      duration: 0,
+    },
+
+    aiExecution: null,
+
+    processed: null,
+
+    metadata: {
+      pipelineVersion: "1.0.0",
+
+      startedAt: new Date().toISOString(),
+
+      completedAt: null,
+
+      duration: 0,
+    },
+  };
+}
+
+module.exports = {
+  createPipelineContext,
+};
+
+====================================================
+services\pipeline\pipelineResult.js
+====================================================
+// ======================================================
+// AI Pipeline Result
+// ======================================================
+
+function createPipelineResult(context) {
+  return {
+    workflow: context.workflow,
+    endpoint: context.endpoint,
+
+    routing: {
+      provider:
+        context.aiExecution?.provider ||
+        context.route?.provider,
+
+      model:
+        context.aiExecution?.model ||
+        context.route?.model,
+
+      source: context.route?.source,
+    },
+
+    template: context.prompt?.template,
+
+    output: context.processed?.output,
+
+    validation:
+      context.processed?.validation,
+
+    repair:
+      context.processed?.repair,
+
+    meta: {
+      pipeline:
+        context.execution?.pipeline,
+
+      pipelineVersion:
+        context.metadata?.pipelineVersion,
+
+      startedAt:
+        context.execution?.startedAt,
+
+      completedAt:
+        context.execution?.completedAt,
+
+      duration:
+        context.execution?.duration || 0,
+
+      completedStages:
+        context.execution?.completedStages || [],
+
+      stages:
+        context.execution?.stageMetrics || [],
+    },
+  };
+}
+
+module.exports = {
+  createPipelineResult,
+};
+
+====================================================
+services\pipeline\resolution\pipelineResolver.js
+====================================================
+// ======================================================
+// Pipeline Resolver
+// ======================================================
+
+const {
+  createPipelineResolution,
+} = require("./pipelineResolution");
+
+const {
+  PipelineResolutionError,
+} = require("./pipelineResolutionError");
+
+// ======================================================
+// Validation
+// ======================================================
+
+function validateRegistry(registry) {
+  if (!registry || typeof registry !== "object") {
+    throw new TypeError(
+      "Pipeline resolver requires a registry."
+    );
+  }
+
+  if (typeof registry.get !== "function") {
+    throw new TypeError(
+      "Pipeline resolver registry must provide get()."
+    );
+  }
+
+  if (typeof registry.list !== "function") {
+    throw new TypeError(
+      "Pipeline resolver registry must provide list()."
+    );
+  }
+
+  return registry;
+}
+
+function normalizePipelineName(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  return normalized.length > 0
+    ? normalized
+    : null;
+}
+
+function getAvailablePipelineNames(registry) {
+  const definitions = registry.list();
+
+  if (!Array.isArray(definitions)) {
+    return [];
+  }
+
+  return definitions
+    .filter(
+      (definition) =>
+        definition &&
+        typeof definition.name === "string"
+    )
+    .map((definition) =>
+      definition.name.trim()
+    )
+    .filter(Boolean)
+    .sort();
+}
+
+// ======================================================
+// Factory
+// ======================================================
+
+function createPipelineResolver({
+  registry,
+  defaultPipelineName,
+}) {
+  validateRegistry(registry);
+
+  const normalizedDefaultPipelineName =
+    normalizePipelineName(
+      defaultPipelineName
+    );
+
+  if (!normalizedDefaultPipelineName) {
+    throw new TypeError(
+      "Pipeline resolver requires a valid default pipeline name."
+    );
+  }
+
+  function resolve({
+    pipelineName = null,
+  } = {}) {
+    const requestedPipeline =
+      normalizePipelineName(pipelineName);
+
+    const resolvedPipeline =
+      requestedPipeline ||
+      normalizedDefaultPipelineName;
+
+    const source = requestedPipeline
+      ? "request"
+      : "default";
+
+    const definition =
+      registry.get(resolvedPipeline);
+
+    if (!definition) {
+      const availablePipelines =
+        getAvailablePipelineNames(registry);
+
+      throw new PipelineResolutionError(
+        `Pipeline "${resolvedPipeline}" is not registered.`,
+        {
+          requestedPipeline,
+          resolvedPipeline,
+          availablePipelines,
+          reason: "pipeline_not_registered",
+        }
+      );
+    }
+
+    return createPipelineResolution({
+      requestedPipeline,
+      resolvedPipeline,
+      source,
+      definition,
+    });
+  }
+
+  return Object.freeze({
+    resolve,
+
+    getDefaultPipelineName() {
+      return normalizedDefaultPipelineName;
+    },
+
+    listAvailablePipelines() {
+      return getAvailablePipelineNames(
+        registry
+      );
+    },
+  });
+}
+
+module.exports = {
+  createPipelineResolver,
+};
+
+====================================================
+services\pipeline\resolution\pipelineResolution.js
+====================================================
+// ======================================================
+// Pipeline Resolution
+// ======================================================
+
+function validateDefinition(definition) {
+  if (!definition || typeof definition !== "object") {
+    throw new TypeError(
+      "Pipeline resolution requires a valid pipeline definition."
+    );
+  }
+
+  if (
+    typeof definition.name !== "string" ||
+    definition.name.trim().length === 0
+  ) {
+    throw new TypeError(
+      "Resolved pipeline definition must provide a valid name."
+    );
+  }
+
+  return definition;
+}
+
+function normalizeNullableName(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  return normalized.length > 0
+    ? normalized
+    : null;
+}
+
+function createPipelineResolution({
+  requestedPipeline = null,
+  resolvedPipeline,
+  source,
+  definition,
+}) {
+  validateDefinition(definition);
+
+  const normalizedRequestedPipeline =
+    normalizeNullableName(requestedPipeline);
+
+  const normalizedResolvedPipeline =
+    normalizeNullableName(resolvedPipeline);
+
+  if (!normalizedResolvedPipeline) {
+    throw new TypeError(
+      "Pipeline resolution requires a resolved pipeline name."
+    );
+  }
+
+  if (
+    source !== "request" &&
+    source !== "default"
+  ) {
+    throw new TypeError(
+      'Pipeline resolution source must be either "request" or "default".'
+    );
+  }
+
+  return Object.freeze({
+    requestedPipeline:
+      normalizedRequestedPipeline,
+
+    resolvedPipeline:
+      normalizedResolvedPipeline,
+
+    source,
+
+    definition,
+  });
+}
+
+module.exports = {
+  createPipelineResolution,
+};
+
+====================================================
+services\pipeline\resolution\pipelineResolutionError.js
+====================================================
+// ======================================================
+// Pipeline Resolution Error
+// ======================================================
+
+class PipelineResolutionError extends Error {
+  constructor(
+    message,
+    {
+      requestedPipeline = null,
+      resolvedPipeline = null,
+      availablePipelines = [],
+      reason = "resolution_failed",
+      cause = null,
+    } = {}
+  ) {
+    super(message);
+
+    this.name = "PipelineResolutionError";
+    this.code = "PIPELINE_RESOLUTION_ERROR";
+
+    this.requestedPipeline =
+      requestedPipeline;
+
+    this.resolvedPipeline =
+      resolvedPipeline;
+
+    this.availablePipelines =
+      Array.isArray(availablePipelines)
+        ? [...availablePipelines]
+        : [];
+
+    this.reason = reason;
+
+    if (cause) {
+      this.cause = cause;
+    }
+
+    Error.captureStackTrace?.(
+      this,
+      PipelineResolutionError
+    );
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      code: this.code,
+      message: this.message,
+      reason: this.reason,
+      requestedPipeline:
+        this.requestedPipeline,
+      resolvedPipeline:
+        this.resolvedPipeline,
+      availablePipelines: [
+        ...this.availablePipelines,
+      ],
+    };
+  }
+}
+
+module.exports = {
+  PipelineResolutionError,
+};
+
+====================================================
+services\pipeline\registry\pipelineRegistry.js
+====================================================
+// ======================================================
+// Pipeline Registry
+// ======================================================
+
+const registry = new Map();
+
+function validateDefinition(definition) {
+  if (!definition || typeof definition !== "object") {
+    throw new TypeError(
+      "Pipeline registry requires a pipeline definition."
+    );
+  }
+
+  if (
+    typeof definition.name !== "string" ||
+    definition.name.trim().length === 0
+  ) {
+    throw new TypeError(
+      "Pipeline definition must provide a valid name."
+    );
+  }
+
+  return definition;
+}
+
+function register(definition) {
+  validateDefinition(definition);
+
+  if (registry.has(definition.name)) {
+    throw new Error(
+      `Pipeline "${definition.name}" is already registered.`
+    );
+  }
+
+  registry.set(definition.name, definition);
+
+  return definition;
+}
+
+function get(name) {
+  return registry.get(name) || null;
+}
+
+function has(name) {
+  return registry.has(name);
+}
+
+function list() {
+  return Array.from(registry.values());
+}
+
+function unregister(name) {
+  return registry.delete(name);
+}
+
+function clear() {
+  registry.clear();
+}
+
+module.exports = {
+  register,
+  get,
+  has,
+  list,
+  unregister,
+  clear,
+};
+
+====================================================
+services\pipeline\definitions\aiGenerationPipeline.js
+====================================================
+// ======================================================
+// AI Generation Pipeline Definition
+// ======================================================
+
+const {
+  createPipelineDefinition,
+} = require("./createPipelineDefinition");
+
+const validateInputStage = require(
+  "../stages/validateInputStage"
+);
+
+const buildContextStage = require(
+  "../stages/buildContextStage"
+);
+
+const routeModelStage = require(
+  "../stages/routeModelStage"
+);
+
+const buildPromptStage = require(
+  "../stages/buildPromptStage"
+);
+
+const executeAIStage = require(
+  "../stages/executeAIStage"
+);
+
+const processOutputStage = require(
+  "../stages/processOutputStage"
+);
+
+module.exports = createPipelineDefinition({
+  name: "ai-generation",
+
+  version: "1.0.0",
+
+  description:
+    "Generates, validates, repairs, and processes AI social content.",
+
+  metadata: {
+    category: "content-generation",
+
+    tags: [
+      "ai",
+      "social-content",
+      "generation",
+      "validation",
+      "repair",
+    ],
+
+    reusable: true,
+
+    experimental: false,
+
+    deprecated: false,
+
+    visibility: "internal",
+  },
+
+  stages: [
+    validateInputStage,
+    buildContextStage,
+    routeModelStage,
+    buildPromptStage,
+    executeAIStage,
+    processOutputStage,
+  ],
+});
+
+====================================================
+services\pipeline\definitions\createPipelineDefinition.js
+====================================================
+// ======================================================
+// Pipeline Definition Builder
+// ======================================================
+
+const {
+  createPipelineMetadata,
+} = require("../models/pipelineMetadata");
+
+// ======================================================
+// Validation
+// ======================================================
+
+function assertNonEmptyString(value, field) {
+  if (
+    typeof value !== "string" ||
+    value.trim().length === 0
+  ) {
+    throw new TypeError(
+      `Pipeline definition requires a valid "${field}".`
+    );
+  }
+
+  return value.trim();
+}
+
+function normalizeDescription(description) {
+  if (
+    description === undefined ||
+    description === null
+  ) {
+    return "";
+  }
+
+  if (typeof description !== "string") {
+    throw new TypeError(
+      'Pipeline definition "description" must be a string.'
+    );
+  }
+
+  return description.trim();
+}
+
+function assertStages(stages) {
+  if (
+    !Array.isArray(stages) ||
+    stages.length === 0
+  ) {
+    throw new TypeError(
+      "Pipeline definition requires at least one stage."
+    );
+  }
+
+  stages.forEach((stage, index) => {
+    if (
+      !stage ||
+      typeof stage.name !== "string" ||
+      stage.name.trim().length === 0 ||
+      typeof stage.execute !== "function"
+    ) {
+      throw new TypeError(
+        `Invalid stage at index ${index}.`
+      );
+    }
+  });
+
+  return Object.freeze([...stages]);
+}
+
+// ======================================================
+// Builder
+// ======================================================
+
+function createPipelineDefinition({
+  name,
+  version,
+  description = "",
+  metadata = {},
+  stages,
+} = {}) {
+  return Object.freeze({
+    name: assertNonEmptyString(
+      name,
+      "name"
+    ),
+
+    version: assertNonEmptyString(
+      version,
+      "version"
+    ),
+
+    description:
+      normalizeDescription(description),
+
+    metadata:
+      createPipelineMetadata(metadata),
+
+    stages: assertStages(stages),
+  });
+}
+
+module.exports = {
+  createPipelineDefinition,
+};
+
+====================================================
+controllers\pipeline.controller.js
+====================================================
+// ======================================================
+// Pipeline Controller
+// ======================================================
+
+const pipelineDiscoveryService = require(
+  "../services/pipeline/pipelineDiscoveryService"
+);
+
+const responseService = require(
+  "../services/responseService"
+);
+
+// ======================================================
+// List Pipelines
+// ======================================================
+
+function getPipelines(req, res) {
+  try {
+    const result =
+      pipelineDiscoveryService.getAllPipelines();
+
+    return responseService.success(
+      res,
+      result
+    );
+  } catch (error) {
+    const statusCode =
+      error.statusCode || 500;
+
+    return responseService.error(
+      res,
+      error,
+      statusCode
+    );
+  }
+}
+
+// ======================================================
+// Get Pipeline
+// ======================================================
+
+function getPipeline(req, res) {
+  try {
+    const result =
+      pipelineDiscoveryService.getPipelineByName(
+        req.params.name
+      );
+
+    return responseService.success(
+      res,
+      result
+    );
+  } catch (error) {
+    const statusCode =
+      error.statusCode || 500;
+
+    return responseService.error(
+      res,
+      error,
+      statusCode
+    );
+  }
+}
+
+module.exports = {
+  getPipelines,
+  getPipeline,
+};
+
+====================================================
+routes\pipeline.routes.js
+====================================================
+// ======================================================
+// Pipeline Routes
+// ======================================================
+
+const express = require("express");
+
+const router = express.Router();
+
+const pipelineController = require(
+  "../controllers/pipeline.controller"
+);
+
+router.get(
+  "/",
+  pipelineController.getPipelines
+);
+
+router.get(
+  "/:name",
+  pipelineController.getPipeline
+);
+
+module.exports = router;
+
+====================================================
+controllers\ai.controller.js
+====================================================
+// ======================================================
+// AI Controller
+// ======================================================
+
+const aiPipeline = require(
+  "../services/pipeline/aiPipeline"
+);
+
+const responseService = require(
+  "../services/responseService"
+);
+
+const templateDiscovery = require(
+  "../services/templateDiscovery"
+);
+
+async function generate(req, res) {
+  try {
+    const result = await aiPipeline.execute({
+      ...req.body,
+      endpoint: "/ai/generate",
+    });
+
+    return responseService.success(
+      res,
+      result
+    );
+  } catch (error) {
+    const statusCode =
+      error.statusCode || 500;
+
+    return responseService.error(
+      res,
+      error,
+      statusCode
+    );
+  }
+}
+
+function getTemplates(req, res) {
+  try {
+    const templates =
+      templateDiscovery.getTemplates();
+
+    return responseService.success(
+      res,
+      templates
+    );
+  } catch (error) {
+    return responseService.error(
+      res,
+      error,
+      500
+    );
+  }
+}
+
+module.exports = {
+  generate,
+  getTemplates,
+};
+
+====================================================
+routes\ai.routes.js
+====================================================
+const express = require('express');
+const router = express.Router();
+
+const aiController = require('../controllers/ai.controller');
+
+router.post('/generate', aiController.generate);
+router.get('/templates', aiController.getTemplates);
+
+module.exports = router;
+
+====================================================
+server.js
+====================================================
+// ======================================================
+// Environment
+// ======================================================
+
+require("dotenv").config();
+
+// ======================================================
+// Dependencies
+// ======================================================
+
+const express = require("express");
+const cors = require("cors");
+
+const appConfig = require("./config/app");
+const serverConfig = require("./config/server");
+
+const applicationLogger = require(
+  "./services/applicationLogger"
+);
+
+const {
+  registerPipelineSubscribers,
+} = require(
+  "./services/pipeline/registerPipelineSubscribers"
+);
+
+// ======================================================
+// Routes
+// ======================================================
+
+const healthRoutes = require(
+  "./routes/health.routes"
+);
+
+const facebookRoutes = require(
+  "./routes/facebook.routes"
+);
+
+const aiRoutes = require(
+  "./routes/ai.routes"
+);
+
+const linkedinRoutes = require(
+  "./routes/linkedin.routes"
+);
+
+const versionRoutes = require(
+  "./routes/version.routes"
+);
+
+const providersRoutes = require(
+  "./routes/providers.routes"
+);
+
+const systemRoutes = require(
+  "./routes/system.routes"
+);
+
+const pipelineRoutes = require(
+  "./routes/pipeline.routes"
+);
+
+// ======================================================
+// Application Setup
+// ======================================================
+
+const app = express();
+
+registerPipelineSubscribers();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static("public"));
+
+// ======================================================
+// Root Route
+// ======================================================
+
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    name: appConfig.name,
+    version: appConfig.version,
+    environment: appConfig.environment,
+    status: "running",
+  });
+});
+
+// ======================================================
+// Application Routes
+// ======================================================
+
+app.use("/ai", aiRoutes);
+app.use("/health", healthRoutes);
+app.use("/facebook", facebookRoutes);
+app.use("/linkedin", linkedinRoutes);
+app.use("/version", versionRoutes);
+app.use("/providers", providersRoutes);
+app.use("/system", systemRoutes);
+app.use("/pipelines", pipelineRoutes);
+
+// ======================================================
+// Not Found Handler
+// ======================================================
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Endpoint not found",
+    path: req.originalUrl,
+  });
+});
+
+// ======================================================
+// Error Handler
+// ======================================================
+
+app.use((error, req, res, next) => {
+  applicationLogger.error(
+    "Unhandled application error.",
+    {
+      method: req.method,
+      path: req.originalUrl,
+      error: {
+        name: error?.name || "Error",
+        message:
+          error?.message ||
+          "Internal server error",
+        stack: error?.stack || null,
+      },
+    }
+  );
+
+  res.status(error?.statusCode || 500).json({
+    success: false,
+    error:
+      error?.message ||
+      "Internal server error",
+  });
+});
+
+// ======================================================
+// Server Startup
+// ======================================================
+
+app.listen(serverConfig.port, () => {
+  applicationLogger.info(
+    `${appConfig.name} server started.`,
+    {
+      version: appConfig.version,
+      port: serverConfig.port,
+      url: `http://localhost:${serverConfig.port}`,
+    }
+  );
+});

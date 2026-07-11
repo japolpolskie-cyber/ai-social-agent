@@ -15,8 +15,13 @@ class PipelineResolutionError extends Error {
   ) {
     super(message);
 
-    this.name = "PipelineResolutionError";
-    this.code = "PIPELINE_RESOLUTION_ERROR";
+    this.name =
+      "PipelineResolutionError";
+
+    this.code =
+      "PIPELINE_RESOLUTION_ERROR";
+
+    this.statusCode = 404;
 
     this.requestedPipeline =
       requestedPipeline;
@@ -47,10 +52,13 @@ class PipelineResolutionError extends Error {
       code: this.code,
       message: this.message,
       reason: this.reason,
+
       requestedPipeline:
         this.requestedPipeline,
+
       resolvedPipeline:
         this.resolvedPipeline,
+
       availablePipelines: [
         ...this.availablePipelines,
       ],

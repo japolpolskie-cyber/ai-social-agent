@@ -10,6 +10,10 @@ const pipelineController = require(
   "../controllers/pipeline.controller"
 );
 
+// ======================================================
+// Discovery
+// ======================================================
+
 router.get(
   "/",
   pipelineController.getPipelines
@@ -18,6 +22,15 @@ router.get(
 router.get(
   "/:name",
   pipelineController.getPipeline
+);
+
+// ======================================================
+// Execution
+// ======================================================
+
+router.post(
+  "/:name/execute",
+  pipelineController.executePipeline
 );
 
 module.exports = router;

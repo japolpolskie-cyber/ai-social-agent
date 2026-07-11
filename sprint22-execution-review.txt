@@ -1,0 +1,271 @@
+
+====================================================
+services\pipeline\aiPipeline.js
+====================================================
+// ======================================================
+// AI Pipeline
+// ======================================================
+
+const {
+  createPipelineContext,
+} = require("./pipelineContext");
+
+const {
+  createPipelineResult,
+} = require("./pipelineResult");
+
+const pipelineRunner = require(
+  "./pipelineRunner"
+);
+
+const {
+  bootstrapPipelineRegistry,
+} = require(
+  "./registry/bootstrapPipelineRegistry"
+);
+
+const {
+  createPipelineResolver,
+} = require(
+  "./resolution/pipelineResolver"
+);
+
+// ======================================================
+// Pipeline Identity
+// ======================================================
+
+const DEFAULT_PIPELINE_NAME =
+  "ai-generation";
+
+// ======================================================
+// Resolve Pipeline
+// ======================================================
+
+function resolvePipeline(input = {}) {
+  const pipelineRegistry =
+    bootstrapPipelineRegistry();
+
+  const pipelineResolver =
+    createPipelineResolver({
+      registry: pipelineRegistry,
+      defaultPipelineName:
+        DEFAULT_PIPELINE_NAME,
+    });
+
+  return pipelineResolver.resolve({
+    pipelineName: input.pipeline,
+  });
+}
+
+// ======================================================
+// Apply Pipeline Metadata
+// ======================================================
+
+function applyPipelineMetadata(
+  context,
+  resolution
+) {
+  const pipelineDefinition =
+    resolution.definition;
+
+  context.metadata.pipelineVersion =
+    pipelineDefinition.version;
+
+  context.metadata.pipeline = {
+    requestedName:
+      resolution.requestedPipeline,
+
+    resolvedName:
+      resolution.resolvedPipeline,
+
+    source:
+      resolution.source,
+
+    version:
+      pipelineDefinition.version,
+  };
+}
+
+// ======================================================
+// Apply Execution Metadata
+// ======================================================
+
+function applyExecutionMetadata(context) {
+  context.metadata.startedAt =
+    context.execution.startedAt;
+
+  context.metadata.completedAt =
+    context.execution.completedAt;
+
+  context.metadata.duration =
+    context.execution.duration;
+}
+
+// ======================================================
+// Execute Pipeline
+// ======================================================
+
+async function execute(input = {}) {
+  const resolution =
+    resolvePipeline(input);
+
+  const pipelineDefinition =
+    resolution.definition;
+
+  const context =
+    createPipelineContext(input);
+
+  context.workflow =
+    `${input.platform || ""} ${input.type || ""}`.trim();
+
+  context.endpoint =
+    input.endpoint || "/ai/generate";
+
+  applyPipelineMetadata(
+    context,
+    resolution
+  );
+
+  await pipelineRunner.run({
+    name: pipelineDefinition.name,
+    context,
+    stages: pipelineDefinition.stages,
+  });
+
+  applyExecutionMetadata(context);
+
+  return createPipelineResult(context);
+}
+
+module.exports = {
+  execute,
+};
+
+====================================================
+services\pipeline\registry\bootstrapPipelineRegistry.js
+====================================================
+// ======================================================
+// Pipeline Registry Bootstrap
+// ======================================================
+
+const pipelineRegistry = require(
+  "./pipelineRegistry"
+);
+
+const aiGenerationPipeline = require(
+  "../definitions/aiGenerationPipeline"
+);
+
+let bootstrapped = false;
+
+function bootstrapPipelineRegistry() {
+  if (bootstrapped) {
+    return pipelineRegistry;
+  }
+
+  if (!pipelineRegistry.has(
+    aiGenerationPipeline.name
+  )) {
+    pipelineRegistry.register(
+      aiGenerationPipeline
+    );
+  }
+
+  bootstrapped = true;
+
+  return pipelineRegistry;
+}
+
+function isPipelineRegistryBootstrapped() {
+  return bootstrapped;
+}
+
+function resetPipelineRegistry() {
+  pipelineRegistry.clear();
+  bootstrapped = false;
+}
+
+module.exports = {
+  bootstrapPipelineRegistry,
+  isPipelineRegistryBootstrapped,
+  resetPipelineRegistry,
+};
+
+====================================================
+services\responseService.js
+====================================================
+// ======================================================
+// Response Service
+// ======================================================
+
+function success(res, data = {}, statusCode = 200) {
+  return res.status(statusCode).json({
+    success: true,
+    ...data,
+  });
+}
+
+function normalizeError(error) {
+  if (!error) {
+    return {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    };
+  }
+
+  if (typeof error.toJSON === "function") {
+    return error.toJSON();
+  }
+
+  return {
+    code:
+      error.code ||
+      "INTERNAL_SERVER_ERROR",
+
+    message:
+      error.message ||
+      String(error),
+
+    ...(error.stage
+      ? { stage: error.stage }
+      : {}),
+
+    ...(error.details !== undefined &&
+    error.details !== null
+      ? { details: error.details }
+      : {}),
+  };
+}
+
+function error(
+  res,
+  errorValue,
+  statusCode = 500
+) {
+  const safeStatusCode =
+    Number.isInteger(statusCode) &&
+    statusCode >= 400 &&
+    statusCode <= 599
+      ? statusCode
+      : 500;
+
+  const publicError =
+    normalizeError(errorValue);
+
+  console.error("❌ Error:", {
+    code: publicError.code,
+    message: publicError.message,
+    stage: publicError.stage || null,
+    statusCode: safeStatusCode,
+  });
+
+  return res.status(safeStatusCode).json({
+    success: false,
+    error: publicError,
+  });
+}
+
+module.exports = {
+  success,
+  error,
+};
