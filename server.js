@@ -74,6 +74,11 @@ const executionAnalyticsRoutes =
     "./routes/executionAnalytics.routes"
   );
 
+const executionReplayRoutes =
+  require(
+    "./routes/executionReplay.routes"
+  );
+
 // ======================================================
 // Application Setup
 // ======================================================
@@ -154,6 +159,11 @@ app.use(
 app.use(
   "/executions/stats",
   executionAnalyticsRoutes
+);
+
+app.use(
+  "/executions",
+  executionReplayRoutes
 );
 
 app.use(
