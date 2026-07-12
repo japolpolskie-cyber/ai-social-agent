@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+
+  ai-social-agent:
+
+    build: .
+
+    container_name: ai-social-agent
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./database:/app/database
+
+    environment:
+      NODE_ENV: production
