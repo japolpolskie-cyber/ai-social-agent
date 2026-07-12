@@ -1,13 +1,7 @@
-version: "3.9"
-
 services:
-
   ai-social-agent:
-
     build: .
-
     container_name: ai-social-agent
-
     restart: unless-stopped
 
     ports:
@@ -21,3 +15,28 @@ services:
 
     environment:
       NODE_ENV: production
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+
+    ports:
+      - "5678:5678"
+
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: Asia/Manila
+      TZ: Asia/Manila
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+    depends_on:
+      - ai-social-agent
+
+volumes:
+  n8n_data:
