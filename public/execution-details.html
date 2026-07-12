@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Execution Details
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="workspace.css">
+
+    <link
+        rel="stylesheet"
+        href="execution-details.css">
+
+</head>
+
+<body>
+
+    <div id="navigationContainer"></div>
+
+    <main class="page-shell">
+
+        <!-- ====================================== -->
+        <!-- Header -->
+        <!-- ====================================== -->
+
+        <section class="page-header">
+
+            <div>
+
+                <p class="eyebrow">
+                    EXECUTION DETAILS
+                </p>
+
+                <h1 id="executionTitle">
+                    Loading...
+                </h1>
+
+                <p
+                    id="executionSubtitle"
+                    class="subtitle">
+
+                    Inspect execution metadata,
+                    pipeline stages,
+                    prompts,
+                    outputs,
+                    and replay history.
+
+                </p>
+
+            </div>
+
+            <div class="header-actions">
+
+                <a
+                    href="/executions.html"
+                    class="secondary-button">
+
+                    ← Back
+
+                </a>
+
+                <button
+                    id="replayButton"
+                    class="primary-button">
+
+                    Replay
+
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- ====================================== -->
+        <!-- Summary -->
+        <!-- ====================================== -->
+
+        <section class="summary-grid">
+
+            <article class="summary-card">
+                <span>Status</span>
+
+                <h2 id="statusValue">
+                    —
+                </h2>
+            </article>
+
+            <article class="summary-card">
+                <span>Pipeline</span>
+
+                <h2 id="pipelineValue">
+                    —
+                </h2>
+            </article>
+
+            <article class="summary-card">
+                <span>Duration</span>
+
+                <h2 id="durationValue">
+                    —
+                </h2>
+            </article>
+
+            <article class="summary-card">
+                <span>Provider</span>
+
+                <h2 id="providerValue">
+                    —
+                </h2>
+            </article>
+
+        </section>
+
+        <!-- ====================================== -->
+        <!-- Metadata -->
+        <!-- ====================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Metadata
+                </h2>
+
+            </div>
+
+            <div class="metadata-grid">
+
+                <div>
+
+                    <label>
+                        Execution ID
+                    </label>
+
+                    <p id="executionId">
+                        —
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <label>
+                        Model
+                    </label>
+
+                    <p id="model">
+                        —
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <label>
+                        Started
+                    </label>
+
+                    <p id="startedAt">
+                        —
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <label>
+                        Completed
+                    </label>
+
+                    <p id="completedAt">
+                        —
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ====================================== -->
+        <!-- Timeline -->
+        <!-- ====================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+
+                    Pipeline Timeline
+
+                </h2>
+
+            </div>
+
+            <div
+                id="timeline"
+                class="timeline">
+
+                Loading...
+
+            </div>
+
+        </section>
+
+        <!-- ====================================== -->
+        <!-- Prompt -->
+        <!-- ====================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+
+                    Prompt
+
+                </h2>
+
+            </div>
+
+            <pre
+                id="promptBox"
+                class="code-box">
+
+Loading...
+
+            </pre>
+
+        </section>
+
+        <!-- ====================================== -->
+        <!-- Output -->
+        <!-- ====================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+
+                    Output
+
+                </h2>
+
+            </div>
+
+            <pre
+                id="outputBox"
+                class="code-box">
+
+Loading...
+
+            </pre>
+
+        </section>
+
+        <!-- ====================================== -->
+        <!-- Raw JSON -->
+        <!-- ====================================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+
+                    Raw JSON
+
+                </h2>
+
+            </div>
+
+            <pre
+                id="jsonBox"
+                class="code-box">
+
+Loading...
+
+            </pre>
+
+        </section>
+
+    </main>
+
+    <script src="navigation.js"></script>
+
+    <script src="components/platformLayout.js"></script>
+
+    <script src="execution-details.js"></script>
+
+</body>
+
+</html>

@@ -3,25 +3,26 @@
 // ======================================================
 
 (function initializePlatformLayoutModule() {
-  const DEFAULT_CONFIG = Object.freeze({
-    applicationName:
-      "AI Social Agent",
+  const DEFAULT_CONFIG =
+    Object.freeze({
+      applicationName:
+        "AI Social Agent",
 
-    applicationLabel:
-      "Automation Platform",
+      applicationLabel:
+        "Automation Platform",
 
-    page:
-      "platform",
+      page:
+        "platform",
 
-    title:
-      "Platform",
+      title:
+        "Platform",
 
-    description:
-      "",
+      description:
+        "",
 
-    showFooter:
-      true,
-  });
+      showFooter:
+        true,
+    });
 
   // ====================================================
   // Helpers
@@ -77,6 +78,23 @@
 
         description:
           "Monitor executions, providers, pipelines, and platform health.",
+      };
+    }
+
+    if (
+      pathname.endsWith(
+        "/executions.html"
+      )
+    ) {
+      return {
+        page:
+          "executions",
+
+        title:
+          "Executions",
+
+        description:
+          "Browse execution history, inspect details, and replay previous runs.",
       };
     }
 
@@ -159,7 +177,8 @@
         ),
 
       showFooter:
-        options.showFooter !== false,
+        options.showFooter !==
+        false,
     };
   }
 
@@ -324,9 +343,16 @@
               "/index.html"
           );
 
+        const isExecutions =
+          config.page ===
+            "executions" &&
+          href ===
+            "/executions.html";
+
         const active =
           isDashboard ||
-          isGenerate;
+          isGenerate ||
+          isExecutions;
 
         link.classList.toggle(
           "active",

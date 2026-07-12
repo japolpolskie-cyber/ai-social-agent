@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Executions | AI Social Agent
+</title>
+
+<link
+    rel="stylesheet"
+    href="/executions.css"
+>
+
+</head>
+
+<body>
+
+<div class="page-shell">
+
+    <header class="page-header">
+
+        <div>
+
+            <p class="eyebrow">
+                EXECUTION CENTER
+            </p>
+
+            <h1>
+                Pipeline Executions
+            </h1>
+
+            <p class="subtitle">
+                Browse execution history,
+                inspect previous runs,
+                and replay pipeline executions.
+            </p>
+
+        </div>
+
+        <button
+            id="refreshButton"
+            class="primary-button"
+        >
+            Refresh
+        </button>
+
+    </header>
+
+    <!-- ================================================= -->
+
+    <section class="toolbar">
+
+        <div class="toolbar-group">
+
+            <label>
+
+                Pipeline
+
+                <select id="pipelineFilter">
+
+                    <option value="">
+                        All Pipelines
+                    </option>
+
+                </select>
+
+            </label>
+
+            <label>
+
+                Status
+
+                <select id="statusFilter">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option value="success">
+                        Success
+                    </option>
+
+                    <option value="failed">
+                        Failed
+                    </option>
+
+                </select>
+
+            </label>
+
+        </div>
+
+        <div class="toolbar-group">
+
+            <label>
+
+                Search
+
+                <input
+                    id="searchInput"
+                    type="text"
+                    placeholder="Execution ID..."
+                >
+
+            </label>
+
+        </div>
+
+    </section>
+
+    <!-- ================================================= -->
+
+    <section class="summary-grid">
+
+        <article class="summary-card">
+
+            <span>
+                Total
+            </span>
+
+            <h2 id="totalExecutions">
+                0
+            </h2>
+
+        </article>
+
+        <article class="summary-card">
+
+            <span>
+                Successful
+            </span>
+
+            <h2
+                id="successfulExecutions"
+                class="success"
+            >
+                0
+            </h2>
+
+        </article>
+
+        <article class="summary-card">
+
+            <span>
+                Failed
+            </span>
+
+            <h2
+                id="failedExecutions"
+                class="failed"
+            >
+                0
+            </h2>
+
+        </article>
+
+        <article class="summary-card">
+
+            <span>
+                Avg Duration
+            </span>
+
+            <h2 id="averageDuration">
+                0 ms
+            </h2>
+
+        </article>
+
+    </section>
+
+    <!-- ================================================= -->
+
+    <section class="table-panel">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Execution
+                    </th>
+
+                    <th>
+                        Pipeline
+                    </th>
+
+                    <th>
+                        Status
+                    </th>
+
+                    <th>
+                        Duration
+                    </th>
+
+                    <th>
+                        Started
+                    </th>
+
+                    <th>
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody
+                id="executionTable"
+            >
+
+                <tr>
+
+                    <td
+                        colspan="6"
+                        class="loading-row"
+                    >
+
+                        Loading execution history...
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+</div>
+
+<script src="/navigation.js"></script>
+
+<script src="/components/platformLayout.js"></script>
+
+<script>
+
+initializePlatformLayout({
+
+page:"executions",
+
+title:"Executions",
+
+description:
+"Browse execution history and replay pipeline runs."
+
+});
+
+</script>
+
+<script src="/executions.js"></script>
+
+</body>
+
+</html>

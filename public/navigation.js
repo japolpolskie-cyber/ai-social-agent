@@ -16,6 +16,13 @@ const NAVIGATION_ITEMS = [
     match: "index.html",
     icon: "✦",
   },
+
+  {
+    label: "Executions",
+    href: "/executions.html",
+    match: "executions.html",
+    icon: "≡",
+  },
 ];
 
 // ======================================================
