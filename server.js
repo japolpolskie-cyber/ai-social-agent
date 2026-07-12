@@ -83,6 +83,10 @@ const monitoringRoutes = require(
   "./routes/monitoring.routes"
 );
 
+const dashboardRoutes = require(
+  "./routes/dashboard.routes"
+);
+
 // ======================================================
 // Application Setup
 // ======================================================
@@ -162,6 +166,11 @@ app.use(
 app.use(
   "/monitoring",
   monitoringRoutes
+);
+
+app.use(
+  "/dashboard",
+  dashboardRoutes
 );
 
 // Must remain before /executions.
