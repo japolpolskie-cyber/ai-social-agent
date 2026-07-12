@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    AI Social Agent Platform
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="/dashboard.css"
+  >
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- ============================================ -->
+    <!-- Header -->
+    <!-- ============================================ -->
+
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">
+          AI AUTOMATION PLATFORM
+        </p>
+
+        <h1>
+          AI Social Agent
+        </h1>
+
+        <p class="header-description">
+          Pipeline execution, provider health,
+          analytics, replay, and monitoring.
+        </p>
+      </div>
+
+      <div
+        id="systemStatus"
+        class="status-badge status-loading"
+      >
+        <span class="status-dot"></span>
+
+        <span id="systemStatusText">
+          Loading
+        </span>
+      </div>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- Error State -->
+    <!-- ============================================ -->
+
+    <section
+      id="errorPanel"
+      class="error-panel hidden"
+    >
+      <h2>
+        Dashboard unavailable
+      </h2>
+
+      <p id="errorMessage">
+        The dashboard could not load.
+      </p>
+
+      <button
+        id="retryButton"
+        type="button"
+      >
+        Retry
+      </button>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- Main Dashboard -->
+    <!-- ============================================ -->
+
+    <main id="dashboardContent">
+
+      <!-- ========================================== -->
+      <!-- Overview -->
+      <!-- ========================================== -->
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">
+              OVERVIEW
+            </p>
+
+            <h2>
+              Platform Status
+            </h2>
+          </div>
+
+          <p
+            id="lastUpdated"
+            class="last-updated"
+          >
+            Waiting for data...
+          </p>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <p class="stat-label">
+              Service
+            </p>
+
+            <p
+              id="serviceName"
+              class="stat-value stat-value-small"
+            >
+              —
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Version
+            </p>
+
+            <p
+              id="serviceVersion"
+              class="stat-value"
+            >
+              —
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Environment
+            </p>
+
+            <p
+              id="environment"
+              class="stat-value stat-value-small"
+            >
+              —
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Execution Store
+            </p>
+
+            <p
+              id="storeType"
+              class="stat-value stat-value-small"
+            >
+              —
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- Execution Statistics -->
+      <!-- ========================================== -->
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">
+              EXECUTIONS
+            </p>
+
+            <h2>
+              Runtime Analytics
+            </h2>
+          </div>
+        </div>
+
+        <div class="stats-grid stats-grid-five">
+          <article class="stat-card">
+            <p class="stat-label">
+              Total Executions
+            </p>
+
+            <p
+              id="totalExecutions"
+              class="stat-value"
+            >
+              0
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Successful
+            </p>
+
+            <p
+              id="successfulExecutions"
+              class="stat-value success-text"
+            >
+              0
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Failed
+            </p>
+
+            <p
+              id="failedExecutions"
+              class="stat-value failure-text"
+            >
+              0
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Success Rate
+            </p>
+
+            <p
+              id="successRate"
+              class="stat-value"
+            >
+              0%
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Average Duration
+            </p>
+
+            <p
+              id="averageDuration"
+              class="stat-value stat-value-small"
+            >
+              0 ms
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- Providers and Pipelines -->
+      <!-- ========================================== -->
+
+      <section class="two-column-grid">
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">
+                PROVIDERS
+              </p>
+
+              <h2>
+                Provider Health
+              </h2>
+            </div>
+
+            <span
+              id="providerCount"
+              class="count-badge"
+            >
+              0
+            </span>
+          </div>
+
+          <div
+            id="providersList"
+            class="list-container"
+          >
+            <p class="empty-state">
+              Loading providers...
+            </p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">
+                PIPELINES
+              </p>
+
+              <h2>
+                Registered Pipelines
+              </h2>
+            </div>
+
+            <span
+              id="pipelineCount"
+              class="count-badge"
+            >
+              0
+            </span>
+          </div>
+
+          <div
+            id="pipelinesList"
+            class="list-container"
+          >
+            <p class="empty-state">
+              Loading pipelines...
+            </p>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- Recent Executions -->
+      <!-- ========================================== -->
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">
+              ACTIVITY
+            </p>
+
+            <h2>
+              Recent Executions
+            </h2>
+          </div>
+
+          <button
+            id="refreshButton"
+            class="secondary-button"
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  Execution ID
+                </th>
+
+                <th>
+                  Pipeline
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Duration
+                </th>
+
+                <th>
+                  Started
+                </th>
+              </tr>
+            </thead>
+
+            <tbody id="executionsTableBody">
+              <tr>
+                <td
+                  colspan="5"
+                  class="empty-table"
+                >
+                  Loading executions...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ============================================ -->
+    <!-- Footer -->
+    <!-- ============================================ -->
+
+    <footer class="dashboard-footer">
+      <span>
+        AI Social Agent Platform
+      </span>
+
+      <span>
+        Local development dashboard
+      </span>
+    </footer>
+
+  </div>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>
