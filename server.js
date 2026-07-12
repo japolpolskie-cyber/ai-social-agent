@@ -2,14 +2,25 @@
 // Environment
 // ======================================================
 
-require("dotenv").config();
+require(
+  "dotenv"
+).config();
 
 // ======================================================
 // Dependencies
 // ======================================================
 
-const express = require("express");
-const cors = require("cors");
+const express = require(
+  "express"
+);
+
+const cors = require(
+  "cors"
+);
+
+// ======================================================
+// Configuration
+// ======================================================
 
 const appConfig = require(
   "./config/app"
@@ -18,6 +29,16 @@ const appConfig = require(
 const serverConfig = require(
   "./config/server"
 );
+
+const {
+  validateEnvironment,
+} = require(
+  "./services/environmentValidator"
+);
+
+// ======================================================
+// Services
+// ======================================================
 
 const applicationLogger = require(
   "./services/applicationLogger"
@@ -88,36 +109,146 @@ const dashboardRoutes = require(
 );
 
 // ======================================================
+// Environment Validation
+// ======================================================
+
+function printEnvironmentValidation(
+  result
+) {
+  console.log("");
+
+  console.log(
+    "========================================"
+  );
+
+  console.log(
+    `${appConfig.name} Environment Validation`
+  );
+
+  console.log(
+    "========================================"
+  );
+
+  console.log("");
+
+  result.checks.forEach(
+    (check) => {
+      const symbol =
+        check.valid
+          ? "✓"
+          : "✗";
+
+      console.log(
+        `${symbol} ${check.name}`
+      );
+    }
+  );
+
+  console.log("");
+
+  if (
+    result.valid
+  ) {
+    console.log(
+      "Environment validation passed."
+    );
+
+    console.log("");
+
+    return;
+  }
+
+  console.error(
+    "Environment validation failed."
+  );
+
+  console.error("");
+
+  console.error(
+    "Missing or invalid environment variables:"
+  );
+
+  result.failed.forEach(
+    (check) => {
+      console.error(
+        `- ${check.name}`
+      );
+    }
+  );
+
+  console.error("");
+
+  console.error(
+    "Server startup aborted."
+  );
+
+  console.error("");
+}
+
+const environmentValidation =
+  validateEnvironment();
+
+printEnvironmentValidation(
+  environmentValidation
+);
+
+if (
+  !environmentValidation.valid
+) {
+  process.exit(1);
+}
+
+// ======================================================
 // Application Setup
 // ======================================================
 
-const app = express();
+const app =
+  express();
 
 registerPipelineSubscribers();
 
-app.use(cors());
-app.use(express.json());
 app.use(
-  express.static("public")
+  cors()
+);
+
+app.use(
+  express.json()
+);
+
+app.use(
+  express.static(
+    "public"
+  )
 );
 
 // ======================================================
 // Root Route
 // ======================================================
 
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    name:
-      appConfig.name,
-    version:
-      appConfig.version,
-    environment:
-      appConfig.environment,
-    status:
-      "running",
-  });
-});
+app.get(
+  "/",
+  (
+    req,
+    res
+  ) => {
+    res.json({
+      success:
+        true,
+
+      name:
+        appConfig.name,
+
+      version:
+        appConfig.version,
+
+      environment:
+        appConfig.environment,
+
+      status:
+        "running",
+    });
+  }
+);
 
 // ======================================================
 // Application Routes
@@ -193,15 +324,27 @@ app.use(
 // Not Found Handler
 // ======================================================
 
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error:
-      "Endpoint not found",
-    path:
-      req.originalUrl,
-  });
-});
+app.use(
+  (
+    req,
+    res
+  ) => {
+    res
+      .status(
+        404
+      )
+      .json({
+        success:
+          false,
+
+        error:
+          "Endpoint not found",
+
+        path:
+          req.originalUrl,
+      });
+  }
+);
 
 // ======================================================
 // Error Handler
@@ -245,7 +388,8 @@ app.use(
         500
       )
       .json({
-        success: false,
+        success:
+          false,
 
         error:
           error?.message ||

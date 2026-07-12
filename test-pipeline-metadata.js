@@ -2,7 +2,9 @@
 // Pipeline Metadata Test
 // ======================================================
 
-const assert = require("node:assert");
+const assert = require(
+  "node:assert"
+);
 
 const {
   createPipelineMetadata,
@@ -17,11 +19,52 @@ const {
 );
 
 // ======================================================
+// Test Runtime
+// ======================================================
+
+const testRuntime = {
+  createContext(input) {
+    return {
+      input,
+    };
+  },
+
+  initialize(context) {
+    return context;
+  },
+
+  beforeExecution(context) {
+    return context;
+  },
+
+  afterExecution(
+    context,
+    result
+  ) {
+    return {
+      context,
+      result,
+    };
+  },
+
+  createResult(context) {
+    return {
+      context,
+    };
+  },
+
+  cleanup(context) {
+    return context;
+  },
+};
+
+// ======================================================
 // Test Stage
 // ======================================================
 
 const testStage = {
-  name: "test-stage",
+  name:
+    "test-stage",
 
   async execute() {},
 };
@@ -37,28 +80,44 @@ function testDefaultMetadata() {
   assert.deepStrictEqual(
     metadata,
     {
-      category: "general",
-      tags: [],
-      reusable: false,
-      experimental: false,
-      deprecated: false,
-      visibility: "internal",
+      category:
+        "general",
+
+      tags:
+        [],
+
+      reusable:
+        false,
+
+      experimental:
+        false,
+
+      deprecated:
+        false,
+
+      visibility:
+        "internal",
     }
   );
 
   assert.ok(
-    Object.isFrozen(metadata)
+    Object.isFrozen(
+      metadata
+    )
   );
 
   assert.ok(
-    Object.isFrozen(metadata.tags)
+    Object.isFrozen(
+      metadata.tags
+    )
   );
 }
 
 function testCustomMetadata() {
   const metadata =
     createPipelineMetadata({
-      category: "content-generation",
+      category:
+        "content-generation",
 
       tags: [
         "ai",
@@ -66,13 +125,17 @@ function testCustomMetadata() {
         "ai",
       ],
 
-      reusable: true,
+      reusable:
+        true,
 
-      experimental: false,
+      experimental:
+        false,
 
-      deprecated: false,
+      deprecated:
+        false,
 
-      visibility: "public",
+      visibility:
+        "public",
     });
 
   assert.deepStrictEqual(
@@ -86,13 +149,17 @@ function testCustomMetadata() {
         "generation",
       ],
 
-      reusable: true,
+      reusable:
+        true,
 
-      experimental: false,
+      experimental:
+        false,
 
-      deprecated: false,
+      deprecated:
+        false,
 
-      visibility: "public",
+      visibility:
+        "public",
     }
   );
 }
@@ -101,9 +168,11 @@ function testInvalidVisibility() {
   assert.throws(
     () => {
       createPipelineMetadata({
-        visibility: "external",
+        visibility:
+          "external",
       });
     },
+
     TypeError
   );
 }
@@ -112,18 +181,24 @@ function testInvalidTags() {
   assert.throws(
     () => {
       createPipelineMetadata({
-        tags: ["ai", ""],
+        tags: [
+          "ai",
+          "",
+        ],
       });
     },
+
     TypeError
   );
 
   assert.throws(
     () => {
       createPipelineMetadata({
-        tags: "ai",
+        tags:
+          "ai",
       });
     },
+
     TypeError
   );
 }
@@ -132,9 +207,11 @@ function testInvalidFlags() {
   assert.throws(
     () => {
       createPipelineMetadata({
-        reusable: "true",
+        reusable:
+          "true",
       });
     },
+
     TypeError
   );
 }
@@ -142,20 +219,33 @@ function testInvalidFlags() {
 function testDefinitionIntegration() {
   const definition =
     createPipelineDefinition({
-      name: "test-pipeline",
+      name:
+        "test-pipeline",
 
-      version: "1.0.0",
+      version:
+        "1.0.0",
 
       description:
         " Test pipeline. ",
 
       metadata: {
-        category: "testing",
-        tags: ["test"],
-        reusable: true,
+        category:
+          "testing",
+
+        tags: [
+          "test",
+        ],
+
+        reusable:
+          true,
       },
 
-      stages: [testStage],
+      runtime:
+        testRuntime,
+
+      stages: [
+        testStage,
+      ],
     });
 
   assert.strictEqual(
@@ -170,7 +260,9 @@ function testDefinitionIntegration() {
 
   assert.deepStrictEqual(
     definition.metadata.tags,
-    ["test"]
+    [
+      "test",
+    ]
   );
 
   assert.strictEqual(
@@ -178,8 +270,15 @@ function testDefinitionIntegration() {
     true
   );
 
+  assert.strictEqual(
+    definition.runtime,
+    testRuntime
+  );
+
   assert.ok(
-    Object.isFrozen(definition)
+    Object.isFrozen(
+      definition
+    )
   );
 
   assert.ok(
@@ -195,10 +294,15 @@ function testDefinitionIntegration() {
 
 function run() {
   testDefaultMetadata();
+
   testCustomMetadata();
+
   testInvalidVisibility();
+
   testInvalidTags();
+
   testInvalidFlags();
+
   testDefinitionIntegration();
 
   console.log(

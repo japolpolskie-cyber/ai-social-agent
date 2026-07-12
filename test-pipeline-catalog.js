@@ -2,7 +2,9 @@
 // Pipeline Catalog Test
 // ======================================================
 
-const assert = require("node:assert");
+const assert = require(
+  "node:assert"
+);
 
 const pipelineRegistry = require(
   "./services/pipeline/registry/pipelineRegistry"
@@ -27,11 +29,59 @@ const {
 );
 
 // ======================================================
-// Test Stage
+// Test Runtime
+// ======================================================
+
+const testRuntime = {
+  createContext(input) {
+    return {
+      input,
+    };
+  },
+
+  initialize(context) {
+    return context;
+  },
+
+  beforeExecution(context) {
+    return context;
+  },
+
+  afterExecution(
+    context,
+    result
+  ) {
+    return {
+      context,
+      result,
+    };
+  },
+
+  createResult(context) {
+    return {
+      context,
+    };
+  },
+
+  cleanup(context) {
+    return context;
+  },
+};
+
+// ======================================================
+// Test Stages
 // ======================================================
 
 const testStage = {
-  name: "test-stage",
+  name:
+    "test-stage",
+
+  async execute() {},
+};
+
+const secondTestStage = {
+  name:
+    "second-test-stage",
 
   async execute() {},
 };
@@ -42,9 +92,11 @@ const testStage = {
 
 const aiPipeline =
   createPipelineDefinition({
-    name: "ai-generation",
+    name:
+      "ai-generation",
 
-    version: "1.0.0",
+    version:
+      "1.0.0",
 
     description:
       "Generates AI content.",
@@ -58,23 +110,34 @@ const aiPipeline =
         "generation",
       ],
 
-      reusable: true,
+      reusable:
+        true,
 
-      experimental: false,
+      experimental:
+        false,
 
-      deprecated: false,
+      deprecated:
+        false,
 
-      visibility: "internal",
+      visibility:
+        "internal",
     },
 
-    stages: [testStage],
+    runtime:
+      testRuntime,
+
+    stages: [
+      testStage,
+    ],
   });
 
 const seoPipeline =
   createPipelineDefinition({
-    name: "seo-generation",
+    name:
+      "seo-generation",
 
-    version: "1.0.0",
+    version:
+      "1.0.0",
 
     description:
       "Generates SEO content.",
@@ -88,18 +151,25 @@ const seoPipeline =
         "generation",
       ],
 
-      reusable: true,
+      reusable:
+        true,
 
-      experimental: true,
+      experimental:
+        true,
 
-      deprecated: false,
+      deprecated:
+        false,
 
-      visibility: "private",
+      visibility:
+        "private",
     },
+
+    runtime:
+      testRuntime,
 
     stages: [
       testStage,
-      testStage,
+      secondTestStage,
     ],
   });
 
@@ -107,8 +177,11 @@ const seoPipeline =
 // Tests
 // ======================================================
 
-function testList(catalog) {
-  const summaries = catalog.list();
+function testList(
+  catalog
+) {
+  const summaries =
+    catalog.list();
 
   assert.strictEqual(
     summaries.length,
@@ -117,7 +190,8 @@ function testList(catalog) {
 
   assert.deepStrictEqual(
     summaries.map(
-      (summary) => summary.name
+      (summary) =>
+        summary.name
     ),
     [
       "ai-generation",
@@ -126,59 +200,95 @@ function testList(catalog) {
   );
 
   assert.ok(
-    Object.isFrozen(summaries)
+    Object.isFrozen(
+      summaries
+    )
   );
 }
 
-function testGet(catalog) {
+function testGet(
+  catalog
+) {
   const summary =
-    catalog.get("ai-generation");
+    catalog.get(
+      "ai-generation"
+    );
 
   assert.deepStrictEqual(
     summary,
     {
-      name: "ai-generation",
-      version: "1.0.0",
+      name:
+        "ai-generation",
+
+      version:
+        "1.0.0",
+
       description:
         "Generates AI content.",
+
       category:
         "content-generation",
+
       tags: [
         "ai",
         "generation",
       ],
-      stageCount: 1,
-      reusable: true,
-      experimental: false,
-      deprecated: false,
-      visibility: "internal",
+
+      stageCount:
+        1,
+
+      reusable:
+        true,
+
+      experimental:
+        false,
+
+      deprecated:
+        false,
+
+      visibility:
+        "internal",
     }
   );
 
   assert.ok(
-    Object.isFrozen(summary)
+    Object.isFrozen(
+      summary
+    )
   );
 
   assert.ok(
-    Object.isFrozen(summary.tags)
+    Object.isFrozen(
+      summary.tags
+    )
   );
 }
 
-function testMissingPipeline(catalog) {
+function testMissingPipeline(
+  catalog
+) {
   assert.strictEqual(
-    catalog.get("missing-pipeline"),
+    catalog.get(
+      "missing-pipeline"
+    ),
     null
   );
 
   assert.strictEqual(
-    catalog.exists("missing-pipeline"),
+    catalog.exists(
+      "missing-pipeline"
+    ),
     false
   );
 }
 
-function testExists(catalog) {
+function testExists(
+  catalog
+) {
   assert.strictEqual(
-    catalog.exists("ai-generation"),
+    catalog.exists(
+      "ai-generation"
+    ),
     true
   );
 
@@ -190,7 +300,9 @@ function testExists(catalog) {
   );
 }
 
-function testListNames(catalog) {
+function testListNames(
+  catalog
+) {
   const names =
     catalog.listNames();
 
@@ -203,13 +315,19 @@ function testListNames(catalog) {
   );
 
   assert.ok(
-    Object.isFrozen(names)
+    Object.isFrozen(
+      names
+    )
   );
 }
 
-function testStageCount(catalog) {
+function testStageCount(
+  catalog
+) {
   const summary =
-    catalog.get("seo-generation");
+    catalog.get(
+      "seo-generation"
+    );
 
   assert.strictEqual(
     summary.stageCount,
@@ -244,15 +362,33 @@ function run() {
 
   const catalog =
     createPipelineCatalog({
-      registry: pipelineRegistry,
+      registry:
+        pipelineRegistry,
     });
 
-  testList(catalog);
-  testGet(catalog);
-  testMissingPipeline(catalog);
-  testExists(catalog);
-  testListNames(catalog);
-  testStageCount(catalog);
+  testList(
+    catalog
+  );
+
+  testGet(
+    catalog
+  );
+
+  testMissingPipeline(
+    catalog
+  );
+
+  testExists(
+    catalog
+  );
+
+  testListNames(
+    catalog
+  );
+
+  testStageCount(
+    catalog
+  );
 
   resetPipelineRegistry();
 

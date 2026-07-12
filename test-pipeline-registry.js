@@ -21,11 +21,52 @@ const {
 );
 
 // ======================================================
+// Test Runtime
+// ======================================================
+
+const testRuntime = {
+  createContext(input) {
+    return {
+      input,
+    };
+  },
+
+  initialize(context) {
+    return context;
+  },
+
+  beforeExecution(context) {
+    return context;
+  },
+
+  afterExecution(
+    context,
+    result
+  ) {
+    return {
+      context,
+      result,
+    };
+  },
+
+  createResult(context) {
+    return {
+      context,
+    };
+  },
+
+  cleanup(context) {
+    return context;
+  },
+};
+
+// ======================================================
 // Test Definition
 // ======================================================
 
 const testStage = {
-  name: "registry-test-stage",
+  name:
+    "registry-test-stage",
 
   execute(context) {
     return context;
@@ -34,12 +75,25 @@ const testStage = {
 
 const testDefinition =
   createPipelineDefinition({
-    name: "registry-test",
-    version: "1.0.0",
-    description: "Registry behavior test.",
-    stages: [testStage],
+    name:
+      "registry-test",
+
+    version:
+      "1.0.0",
+
+    description:
+      "Registry behavior test.",
+
+    runtime:
+      testRuntime,
+
+    stages: [
+      testStage,
+    ],
+
     metadata: {
-      category: "test",
+      category:
+        "test",
     },
   });
 
@@ -51,27 +105,41 @@ function runTest() {
   resetPipelineRegistry();
 
   const registerResult =
-    pipelineRegistry.register(testDefinition);
+    pipelineRegistry.register(
+      testDefinition
+    );
 
   const registerValid =
-    registerResult === testDefinition;
+    registerResult ===
+    testDefinition;
 
   const getValid =
-    pipelineRegistry.get("registry-test") ===
+    pipelineRegistry.get(
+      "registry-test"
+    ) ===
     testDefinition;
 
   const hasValid =
-    pipelineRegistry.has("registry-test");
+    pipelineRegistry.has(
+      "registry-test"
+    );
+
+  const registeredDefinitions =
+    pipelineRegistry.list();
 
   const listValid =
-    pipelineRegistry.list().length === 1 &&
-    pipelineRegistry.list()[0] ===
+    registeredDefinitions.length ===
+      1 &&
+    registeredDefinitions[0] ===
       testDefinition;
 
-  let duplicateProtectionValid = false;
+  let duplicateProtectionValid =
+    false;
 
   try {
-    pipelineRegistry.register(testDefinition);
+    pipelineRegistry.register(
+      testDefinition
+    );
   } catch (error) {
     duplicateProtectionValid =
       error.message ===
@@ -82,16 +150,24 @@ function runTest() {
     pipelineRegistry.unregister(
       "registry-test"
     ) &&
-    !pipelineRegistry.has("registry-test") &&
+    !pipelineRegistry.has(
+      "registry-test"
+    ) &&
     pipelineRegistry.get(
       "registry-test"
-    ) === null;
+    ) ===
+      null;
 
-  pipelineRegistry.register(testDefinition);
+  pipelineRegistry.register(
+    testDefinition
+  );
+
   pipelineRegistry.clear();
 
   const clearValid =
-    pipelineRegistry.list().length === 0;
+    pipelineRegistry.list()
+      .length ===
+    0;
 
   const firstBootstrap =
     bootstrapPipelineRegistry();
@@ -100,26 +176,43 @@ function runTest() {
     bootstrapPipelineRegistry();
 
   const bootstrapValid =
-    firstBootstrap === pipelineRegistry &&
-    secondBootstrap === pipelineRegistry &&
+    firstBootstrap ===
+      pipelineRegistry &&
+    secondBootstrap ===
+      pipelineRegistry &&
     isPipelineRegistryBootstrapped() &&
-    pipelineRegistry.has("ai-generation") &&
-    pipelineRegistry.list().length === 1;
+    pipelineRegistry.has(
+      "ai-generation"
+    ) &&
+    pipelineRegistry.list()
+      .length ===
+      1;
 
   console.log({
     registerValid,
+
     getValid,
+
     hasValid,
+
     listValid,
+
     duplicateProtectionValid,
+
     unregisterValid,
+
     clearValid,
+
     bootstrapValid,
+
     registeredPipelines:
       pipelineRegistry.list().map(
         (definition) => ({
-          name: definition.name,
-          version: definition.version,
+          name:
+            definition.name,
+
+          version:
+            definition.version,
         })
       ),
   });
@@ -137,7 +230,11 @@ function runTest() {
     bootstrapValid,
   ];
 
-  if (!results.every(Boolean)) {
+  if (
+    !results.every(
+      Boolean
+    )
+  ) {
     throw new Error(
       "Pipeline registry test failed."
     );
@@ -157,7 +254,10 @@ try {
     "\nPipeline registry test failed:"
   );
 
-  console.error(error);
+  console.error(
+    error
+  );
 
-  process.exitCode = 1;
+  process.exitCode =
+    1;
 }

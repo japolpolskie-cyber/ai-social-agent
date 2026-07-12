@@ -33,7 +33,9 @@ function createTestRecord({
 } = {}) {
   return createExecutionRecord({
     executionId,
+
     pipeline,
+
     pipelineVersion:
       "1.0.0",
 
@@ -60,6 +62,9 @@ function createTestRecord({
     metadata:
       {},
 
+    requestSnapshot:
+      null,
+
     error:
       status === "failed"
         ? {
@@ -74,6 +79,40 @@ function createTestRecord({
           }
         : null,
   });
+}
+
+// ======================================================
+// Execution Request Factory
+// ======================================================
+
+function createTestExecutionRequest({
+  executionId,
+  metadata = {},
+} = {}) {
+  return {
+    pipelineName:
+      "ai-generation",
+
+    input: {
+      platform:
+        "facebook",
+
+      type:
+        "caption",
+
+      topic:
+        "Pipeline execution store test",
+    },
+
+    endpoint:
+      "/test",
+
+    configuration: {
+      executionId,
+
+      metadata,
+    },
+  };
 }
 
 // ======================================================
@@ -128,6 +167,16 @@ async function testStoreContract() {
     "store-success-001"
   );
 
+  assert.strictEqual(
+    storedRecord.pipeline,
+    "ai-generation"
+  );
+
+  assert.strictEqual(
+    storedRecord.status,
+    "success"
+  );
+
   const failedRecords =
     await executionStore.list({
       status:
@@ -142,6 +191,11 @@ async function testStoreContract() {
   assert.strictEqual(
     failedRecords[0].status,
     "failed"
+  );
+
+  assert.strictEqual(
+    failedRecords[0].error.code,
+    "TEST_FAILURE"
   );
 
   assert.strictEqual(
@@ -250,6 +304,29 @@ async function testLifecycleIntegration() {
       pipelineContext.execution.duration =
         1000;
 
+      pipelineContext.execution.completedStages = [
+        "test-stage",
+      ];
+
+      pipelineContext.execution.stageMetrics = [
+        {
+          stage:
+            "test-stage",
+
+          status:
+            "success",
+
+          duration:
+            1000,
+
+          startedAt:
+            "2026-07-11T00:00:00.000Z",
+
+          completedAt:
+            "2026-07-11T00:00:01.000Z",
+        },
+      ];
+
       return pipelineContext;
     },
   };
@@ -257,7 +334,19 @@ async function testLifecycleIntegration() {
   const manager =
     createRuntimeLifecycleManager({
       runtime,
+
       runner,
+    });
+
+  const request =
+    createTestExecutionRequest({
+      executionId:
+        "lifecycle-store-001",
+
+      metadata: {
+        source:
+          "unit-test",
+      },
     });
 
   await manager.run({
@@ -265,26 +354,16 @@ async function testLifecycleIntegration() {
       name:
         "ai-generation",
 
+      version:
+        "1.0.0",
+
       stages:
         [],
     },
 
     context,
 
-    request: {
-      endpoint:
-        "/test",
-
-      configuration: {
-        executionId:
-          "lifecycle-store-001",
-
-        metadata: {
-          source:
-            "unit-test",
-        },
-      },
-    },
+    request,
 
     resolution: {
       resolvedPipeline:
@@ -319,6 +398,68 @@ async function testLifecycleIntegration() {
     "ai-generation"
   );
 
+  assert.strictEqual(
+    record.pipelineVersion,
+    "1.0.0"
+  );
+
+  assert.strictEqual(
+    record.duration,
+    1000
+  );
+
+  assert.strictEqual(
+    record.completedStages.length,
+    1
+  );
+
+  assert.strictEqual(
+    record.stageMetrics.length,
+    1
+  );
+
+  assert.strictEqual(
+    record.metadata.source,
+    "unit-test"
+  );
+
+  assert.ok(
+    record.requestSnapshot
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.pipelineName,
+    "ai-generation"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.platform,
+    "facebook"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.type,
+    "caption"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.topic,
+    "Pipeline execution store test"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.endpoint,
+    "/test"
+  );
+
+  assert.deepStrictEqual(
+    record.requestSnapshot.options.metadata,
+    {
+      source:
+        "unit-test",
+    }
+  );
+
   await executionStore.clear();
 }
 
@@ -331,6 +472,7 @@ async function run() {
     .resetExecutionStore();
 
   await testStoreContract();
+
   await testLifecycleIntegration();
 
   console.log(
@@ -344,8 +486,11 @@ run().catch(
       "Pipeline execution store tests failed."
     );
 
-    console.error(error);
+    console.error(
+      error
+    );
 
-    process.exitCode = 1;
+    process.exitCode =
+      1;
   }
 );

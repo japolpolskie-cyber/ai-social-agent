@@ -1,17 +1,26 @@
 {
   "name": "ai-social-agent",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Reusable AI content generation and execution platform with pipeline orchestration, monitoring, analytics, persistence, and replay.",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "test": "node scripts/run-tests.js",
+    "test:all": "node scripts/run-tests.js --all",
     "health": "node check-db.js",
     "rules": "node test-rules.js",
     "worker": "node worker.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "ai",
+    "automation",
+    "pipeline",
+    "social-media",
+    "content-generation",
+    "nodejs"
+  ],
+  "author": "Paul Perez",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

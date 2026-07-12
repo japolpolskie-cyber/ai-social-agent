@@ -13,6 +13,58 @@ const {
 );
 
 // ======================================================
+// Request Factory
+// ======================================================
+
+function createTestRequest({
+  executionId,
+  metadata = {},
+  topic,
+} = {}) {
+  return {
+    pipelineName:
+      "ai-generation",
+
+    input: {
+      platform:
+        "facebook",
+
+      type:
+        "caption",
+
+      topic:
+        topic ||
+        "Pipeline execution record test",
+    },
+
+    endpoint:
+      "/pipelines/ai-generation/execute",
+
+    configuration: {
+      executionId,
+
+      metadata,
+    },
+  };
+}
+
+// ======================================================
+// Resolution Factory
+// ======================================================
+
+function createTestResolution() {
+  return {
+    resolvedPipeline:
+      "ai-generation",
+
+    definition: {
+      version:
+        "1.0.0",
+    },
+  };
+}
+
+// ======================================================
 // Success Record
 // ======================================================
 
@@ -67,31 +119,28 @@ function testSuccessRecord() {
     },
   };
 
+  const request =
+    createTestRequest({
+      executionId:
+        "record-test-success",
+
+      metadata: {
+        client:
+          "local",
+      },
+
+      topic:
+        "Successful execution record",
+    });
+
   const record =
     createPipelineExecutionRecord({
       context,
 
-      request: {
-        configuration: {
-          executionId:
-            "record-test-success",
+      request,
 
-          metadata: {
-            client:
-              "local",
-          },
-        },
-      },
-
-      resolution: {
-        resolvedPipeline:
-          "ai-generation",
-
-        definition: {
-          version:
-            "1.0.0",
-        },
-      },
+      resolution:
+        createTestResolution(),
     });
 
   assert.strictEqual(
@@ -110,13 +159,98 @@ function testSuccessRecord() {
   );
 
   assert.strictEqual(
+    record.pipelineVersion,
+    "1.0.0"
+  );
+
+  assert.strictEqual(
+    record.endpoint,
+    "/pipelines/ai-generation/execute"
+  );
+
+  assert.strictEqual(
+    record.duration,
+    1000
+  );
+
+  assert.strictEqual(
     record.completedStages.length,
     2
   );
 
   assert.strictEqual(
+    record.stageMetrics.length,
+    1
+  );
+
+  assert.strictEqual(
+    record.metadata.client,
+    "local"
+  );
+
+  assert.strictEqual(
+    record.metadata.source,
+    "unit-test"
+  );
+
+  assert.strictEqual(
     record.error,
     null
+  );
+
+  assert.ok(
+    record.requestSnapshot
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.pipelineName,
+    "ai-generation"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.platform,
+    "facebook"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.type,
+    "caption"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.topic,
+    "Successful execution record"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.endpoint,
+    "/pipelines/ai-generation/execute"
+  );
+
+  assert.deepStrictEqual(
+    record.requestSnapshot.options.metadata,
+    {
+      client:
+        "local",
+    }
+  );
+
+  assert.ok(
+    Object.isFrozen(
+      record.requestSnapshot
+    )
+  );
+
+  assert.ok(
+    Object.isFrozen(
+      record.requestSnapshot.input
+    )
+  );
+
+  assert.ok(
+    Object.isFrozen(
+      record.requestSnapshot.options
+    )
   );
 }
 
@@ -135,6 +269,20 @@ function testFailedRecord() {
 
   error.stage =
     "validate-input";
+
+  const request =
+    createTestRequest({
+      executionId:
+        "record-test-failed",
+
+      metadata: {
+        source:
+          "failure-test",
+      },
+
+      topic:
+        "Failed execution record",
+    });
 
   const record =
     createPipelineExecutionRecord({
@@ -174,25 +322,10 @@ function testFailedRecord() {
         },
       },
 
-      request: {
-        configuration: {
-          executionId:
-            "record-test-failed",
+      request,
 
-          metadata:
-            {},
-        },
-      },
-
-      resolution: {
-        resolvedPipeline:
-          "ai-generation",
-
-        definition: {
-          version:
-            "1.0.0",
-        },
-      },
+      resolution:
+        createTestResolution(),
 
       error,
     });
@@ -200,6 +333,21 @@ function testFailedRecord() {
   assert.strictEqual(
     record.status,
     "failed"
+  );
+
+  assert.strictEqual(
+    record.executionId,
+    "record-test-failed"
+  );
+
+  assert.strictEqual(
+    record.pipeline,
+    "ai-generation"
+  );
+
+  assert.strictEqual(
+    record.duration,
+    100
   );
 
   assert.strictEqual(
@@ -211,6 +359,84 @@ function testFailedRecord() {
     record.error.stage,
     "validate-input"
   );
+
+  assert.ok(
+    record.requestSnapshot
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.pipelineName,
+    "ai-generation"
+  );
+
+  assert.strictEqual(
+    record.requestSnapshot.input.topic,
+    "Failed execution record"
+  );
+
+  assert.deepStrictEqual(
+    record.requestSnapshot.options.metadata,
+    {
+      source:
+        "failure-test",
+    }
+  );
+}
+
+// ======================================================
+// Missing Request
+// ======================================================
+
+function testMissingRequest() {
+  const record =
+    createPipelineExecutionRecord({
+      context: {
+        endpoint:
+          "/pipelines/ai-generation/execute",
+
+        execution: {
+          id:
+            "record-test-no-request",
+
+          pipeline:
+            "ai-generation",
+
+          completedStages:
+            [],
+
+          stageMetrics:
+            [],
+
+          startedAt:
+            "2026-07-11T00:00:00.000Z",
+
+          completedAt:
+            "2026-07-11T00:00:00.050Z",
+
+          duration:
+            50,
+        },
+
+        metadata: {
+          pipelineVersion:
+            "1.0.0",
+
+          execution:
+            {},
+        },
+      },
+
+      request:
+        null,
+
+      resolution:
+        createTestResolution(),
+    });
+
+  assert.strictEqual(
+    record.requestSnapshot,
+    null
+  );
 }
 
 // ======================================================
@@ -219,7 +445,10 @@ function testFailedRecord() {
 
 function run() {
   testSuccessRecord();
+
   testFailedRecord();
+
+  testMissingRequest();
 
   console.log(
     "Pipeline execution record tests passed."
