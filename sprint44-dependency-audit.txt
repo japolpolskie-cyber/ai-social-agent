@@ -1,0 +1,1606 @@
+
+====================================================
+services\pipeline\pipelineExecutor.js
+====================================================
+// ======================================================
+// Pipeline Executor
+// ======================================================
+
+const PipelineError = require(
+  "./pipelineError"
+);
+
+const pipelineRunner = require(
+  "./pipelineRunner"
+);
+
+const {
+  bootstrapPipelineRegistry,
+} = require(
+  "./registry/bootstrapPipelineRegistry"
+);
+
+const {
+  createPipelineResolver,
+} = require(
+  "./resolution/pipelineResolver"
+);
+
+const {
+  createPipelineExecutionRequest,
+} = require(
+  "./execution/pipelineExecutionRequest"
+);
+
+const {
+  createRuntimeLifecycleManager,
+} = require(
+  "./lifecycle/runtimeLifecycleManager"
+);
+
+// ======================================================
+// Defaults
+// ======================================================
+
+const DEFAULT_PIPELINE_NAME =
+  "ai-generation";
+
+// ======================================================
+// Resolver Factory
+// ======================================================
+
+function createResolver() {
+  const registry =
+    bootstrapPipelineRegistry();
+
+  return createPipelineResolver({
+    registry,
+
+    defaultPipelineName:
+      DEFAULT_PIPELINE_NAME,
+  });
+}
+
+// ======================================================
+// Runtime Validation
+// ======================================================
+
+function validateRuntime(definition) {
+  const runtime =
+    definition?.runtime;
+
+  if (!runtime) {
+    throw new PipelineError({
+      code:
+        "PIPELINE_RUNTIME_INVALID",
+
+      message:
+        `Pipeline "${definition?.name || "unknown"}" ` +
+        "has no runtime.",
+
+      stage:
+        "pipeline-executor",
+
+      statusCode: 500,
+    });
+  }
+
+  return runtime;
+}
+
+// ======================================================
+// Context Validation
+// ======================================================
+
+function validateContext(
+  context,
+  definition
+) {
+  if (
+    !context ||
+    typeof context !== "object" ||
+    Array.isArray(context)
+  ) {
+    throw new PipelineError({
+      code:
+        "PIPELINE_CONTEXT_INVALID",
+
+      message:
+        `Pipeline "${definition.name}" runtime ` +
+        "must return a valid context.",
+
+      stage:
+        "pipeline-executor",
+
+      statusCode: 500,
+    });
+  }
+
+  return context;
+}
+
+// ======================================================
+// Context State
+// ======================================================
+
+function ensureContextState(context) {
+  if (
+    !context.metadata ||
+    typeof context.metadata !== "object" ||
+    Array.isArray(context.metadata)
+  ) {
+    context.metadata = {};
+  }
+
+  if (
+    !context.execution ||
+    typeof context.execution !== "object" ||
+    Array.isArray(context.execution)
+  ) {
+    context.execution = {};
+  }
+}
+
+// ======================================================
+// Metadata
+// ======================================================
+
+function applyExecutionConfiguration(
+  context,
+  configuration
+) {
+  ensureContextState(
+    context
+  );
+
+  context.execution.id =
+    configuration.executionId;
+
+  context.metadata.executionId =
+    configuration.executionId;
+
+  context.metadata.execution = {
+    ...configuration.metadata,
+  };
+}
+
+function applyPipelineMetadata(
+  context,
+  resolution
+) {
+  ensureContextState(
+    context
+  );
+
+  const definition =
+    resolution.definition;
+
+  context.metadata.pipelineVersion =
+    definition.version;
+
+  context.metadata.pipeline = {
+    requestedName:
+      resolution.requestedPipeline,
+
+    resolvedName:
+      resolution.resolvedPipeline,
+
+    source:
+      resolution.source,
+
+    version:
+      definition.version,
+  };
+}
+
+function applyExecutionMetadata(
+  context
+) {
+  ensureContextState(
+    context
+  );
+
+  context.metadata.startedAt =
+    context.execution.startedAt ||
+    null;
+
+  context.metadata.completedAt =
+    context.execution.completedAt ||
+    null;
+
+  context.metadata.duration =
+    context.execution.duration ||
+    0;
+}
+
+// ======================================================
+// Execution
+// ======================================================
+
+async function execute(command = {}) {
+  const request =
+    createPipelineExecutionRequest(
+      command
+    );
+
+  const resolver =
+    createResolver();
+
+  const resolution =
+    resolver.resolve({
+      pipelineName:
+        request.pipelineName,
+    });
+
+  const definition =
+    resolution.definition;
+
+  const runtime =
+    validateRuntime(
+      definition
+    );
+
+  const context =
+    validateContext(
+      runtime.createContext(
+        request.input,
+        {
+          endpoint:
+            request.endpoint,
+
+          resolution,
+
+          configuration:
+            request.configuration,
+        }
+      ),
+      definition
+    );
+
+  applyExecutionConfiguration(
+    context,
+    request.configuration
+  );
+
+  applyPipelineMetadata(
+    context,
+    resolution
+  );
+
+  const lifecycleManager =
+    createRuntimeLifecycleManager({
+      runtime,
+      runner:
+        pipelineRunner,
+    });
+
+  return lifecycleManager.run({
+    definition,
+    context,
+    request,
+    resolution,
+
+    onExecutionCompleted:
+      applyExecutionMetadata,
+  });
+}
+
+module.exports = {
+  execute,
+};
+
+====================================================
+services\pipeline\pipelineRunner.js
+====================================================
+// ======================================================
+// Pipeline Runner
+// ======================================================
+
+const PipelineError = require(
+  "./pipelineError"
+);
+
+const {
+  createPipelineExecutionEngine,
+} = require(
+  "./execution-engine/executionEngine"
+);
+
+// ======================================================
+// Stage Helpers
+// ======================================================
+
+function getStageName(
+  stage,
+  index
+) {
+  if (
+    stage &&
+    typeof stage.name === "string" &&
+    stage.name.trim()
+  ) {
+    return stage.name.trim();
+  }
+
+  return `stage-${index + 1}`;
+}
+
+function validateStages(stages) {
+  if (
+    !Array.isArray(stages) ||
+    stages.length === 0
+  ) {
+    throw new PipelineError({
+      code:
+        "PIPELINE_STAGES_INVALID",
+
+      message:
+        "Pipeline requires at least one stage.",
+
+      stage:
+        "pipeline-runner",
+
+      statusCode: 500,
+    });
+  }
+
+  stages.forEach(
+    (stage, index) => {
+      if (
+        !stage ||
+        typeof stage.execute !==
+          "function"
+      ) {
+        throw new PipelineError({
+          code:
+            "PIPELINE_STAGE_INVALID",
+
+          message:
+            `Pipeline stage at index ${index} must ` +
+            "provide an execute function.",
+
+          stage:
+            getStageName(
+              stage,
+              index
+            ),
+
+          statusCode: 500,
+        });
+      }
+    }
+  );
+}
+
+// ======================================================
+// Stage Result Validation
+// ======================================================
+
+function validateStageResult({
+  result,
+  context,
+  stageName,
+}) {
+  if (
+    result !== undefined &&
+    result !== null &&
+    result !== context
+  ) {
+    throw new PipelineError({
+      code:
+        "PIPELINE_STAGE_RESULT_INVALID",
+
+      message:
+        `Pipeline stage "${stageName}" must ` +
+        "return the existing pipeline context " +
+        "or no value.",
+
+      stage:
+        stageName,
+
+      statusCode: 500,
+    });
+  }
+}
+
+// ======================================================
+// Pipeline Execution
+// ======================================================
+
+async function run({
+  name,
+  context,
+  stages,
+}) {
+  validateStages(stages);
+
+  const executionEngine =
+    createPipelineExecutionEngine({
+      context,
+
+      pipelineName:
+        name,
+
+      stageCount:
+        stages.length,
+    });
+
+  await executionEngine
+    .initializeExecution();
+
+  try {
+    for (
+      let index = 0;
+      index < stages.length;
+      index += 1
+    ) {
+      const stage =
+        stages[index];
+
+      const stageName =
+        getStageName(
+          stage,
+          index
+        );
+
+      const stageExecution =
+        await executionEngine.startStage({
+          stageName,
+          stageIndex:
+            index,
+        });
+
+      try {
+        const stageResult =
+          await stage.execute(
+            context
+          );
+
+        validateStageResult({
+          result:
+            stageResult,
+
+          context,
+
+          stageName,
+        });
+
+        await executionEngine
+          .completeStage({
+            stageName,
+            stageIndex:
+              index,
+
+            startedAt:
+              stageExecution.startedAt,
+          });
+      } catch (error) {
+        const normalizedError =
+          await executionEngine
+            .failStage({
+              error,
+
+              stageName,
+
+              stageIndex:
+                index,
+
+              startedAt:
+                stageExecution.startedAt,
+            });
+
+        throw normalizedError;
+      }
+    }
+
+    await executionEngine
+      .completeExecution();
+
+    return context;
+  } catch (error) {
+    const pipelineError =
+      await executionEngine
+        .failExecution(
+          error
+        );
+
+    throw pipelineError;
+  }
+}
+
+module.exports = {
+  run,
+};
+
+====================================================
+services\pipeline\execution\pipelineExecutionService.js
+====================================================
+// ======================================================
+// Pipeline Execution Service
+// ======================================================
+
+const pipelineExecutor = require(
+  "../pipelineExecutor"
+);
+
+// ======================================================
+// Validation
+// ======================================================
+
+function validateRequest(request) {
+  if (
+    !request ||
+    typeof request !== "object" ||
+    Array.isArray(request)
+  ) {
+    throw new TypeError(
+      "Pipeline execution request is required."
+    );
+  }
+
+  if (
+    typeof request.pipelineName !==
+      "string" ||
+    request.pipelineName.trim().length ===
+      0
+  ) {
+    throw new TypeError(
+      "Pipeline name is required."
+    );
+  }
+
+  if (
+    !request.input ||
+    typeof request.input !==
+      "object" ||
+    Array.isArray(request.input)
+  ) {
+    throw new TypeError(
+      "Pipeline input is required."
+    );
+  }
+
+  return request;
+}
+
+// ======================================================
+// Execute
+// ======================================================
+
+async function execute(request) {
+  const validatedRequest =
+    validateRequest(
+      request
+    );
+
+  const configuration =
+    validatedRequest.configuration ||
+    {};
+
+  return pipelineExecutor.execute({
+    pipelineName:
+      validatedRequest.pipelineName,
+
+    input:
+      validatedRequest.input,
+
+    endpoint:
+      validatedRequest.endpoint ||
+      null,
+
+    options: {
+      executionId:
+        configuration.executionId ||
+        null,
+
+      metadata:
+        configuration.metadata ||
+        {},
+    },
+  });
+}
+
+async function executePipeline(request) {
+  return execute(
+    request
+  );
+}
+
+async function executeRequest(request) {
+  return execute(
+    request
+  );
+}
+
+module.exports = Object.freeze({
+  execute,
+  executePipeline,
+  executeRequest,
+});
+
+====================================================
+services\pipeline\replay\executionReplayService.js
+====================================================
+// ======================================================
+// Execution Replay Service
+// ======================================================
+
+const PipelineError = require(
+  "../pipelineError"
+);
+
+const executionQueryService = require(
+  "../query/executionQueryService"
+);
+
+const pipelineExecutionService = require(
+  "../execution/pipelineExecutionService"
+);
+
+const {
+  createExecutionReplayRequest,
+} = require(
+  "./executionReplayRequest"
+);
+
+// ======================================================
+// Errors
+// ======================================================
+
+function createExecutionNotFoundError(
+  executionId
+) {
+  return new PipelineError({
+    code:
+      "EXECUTION_NOT_FOUND",
+
+    message:
+      `Execution "${executionId}" was not found.`,
+
+    stage:
+      "execution-replay",
+
+    statusCode:
+      404,
+
+    details: {
+      executionId,
+    },
+  });
+}
+
+function createSnapshotUnavailableError(
+  executionId
+) {
+  return new PipelineError({
+    code:
+      "EXECUTION_SNAPSHOT_UNAVAILABLE",
+
+    message:
+      `Execution "${executionId}" does not contain a replayable request snapshot.`,
+
+    stage:
+      "execution-replay",
+
+    statusCode:
+      409,
+
+    details: {
+      executionId,
+    },
+  });
+}
+
+// ======================================================
+// Validation
+// ======================================================
+
+function normalizeExecutionId(
+  executionId
+) {
+  if (
+    typeof executionId !== "string" ||
+    executionId.trim().length === 0
+  ) {
+    throw new PipelineError({
+      code:
+        "EXECUTION_REPLAY_REQUEST_INVALID",
+
+      message:
+        "A valid execution ID is required for replay.",
+
+      stage:
+        "execution-replay",
+
+      statusCode:
+        400,
+
+      details: {
+        field:
+          "executionId",
+      },
+    });
+  }
+
+  return executionId.trim();
+}
+
+// ======================================================
+// Service Factory
+// ======================================================
+
+function createExecutionReplayService({
+  getExecution =
+    executionQueryService.getExecution,
+
+  executePipeline =
+    pipelineExecutionService.execute,
+} = {}) {
+  if (
+    typeof getExecution !==
+    "function"
+  ) {
+    throw new TypeError(
+      'Execution replay service requires "getExecution()".'
+    );
+  }
+
+  if (
+    typeof executePipeline !==
+    "function"
+  ) {
+    throw new TypeError(
+      'Execution replay service requires "executePipeline()".'
+    );
+  }
+
+  async function replayExecution(
+    executionId,
+    options = {}
+  ) {
+    const normalizedExecutionId =
+      normalizeExecutionId(
+        executionId
+      );
+
+    const originalExecution =
+      await getExecution(
+        normalizedExecutionId
+      );
+
+    if (!originalExecution) {
+      throw createExecutionNotFoundError(
+        normalizedExecutionId
+      );
+    }
+
+    if (
+      !originalExecution
+        .requestSnapshot
+    ) {
+      throw createSnapshotUnavailableError(
+        normalizedExecutionId
+      );
+    }
+
+    const replayRequest =
+      createExecutionReplayRequest({
+        originalExecutionId:
+          normalizedExecutionId,
+
+        requestSnapshot:
+          originalExecution
+            .requestSnapshot,
+
+        metadata:
+          options.metadata ||
+          {},
+      });
+
+    const result =
+      await executePipeline(
+        replayRequest.request
+      );
+
+    return Object.freeze({
+      replayedFrom:
+        normalizedExecutionId,
+
+      newExecutionId:
+        replayRequest
+          .newExecutionId,
+
+      pipeline:
+        replayRequest
+          .request
+          .pipelineName,
+
+      result,
+    });
+  }
+
+  return Object.freeze({
+    replayExecution,
+  });
+}
+
+// ======================================================
+// Default Service
+// ======================================================
+
+const defaultReplayService =
+  createExecutionReplayService();
+
+module.exports = {
+  createExecutionReplayService,
+
+  replayExecution:
+    defaultReplayService
+      .replayExecution,
+};
+
+====================================================
+services\pipeline\query\executionQueryService.js
+====================================================
+// ======================================================
+// Execution Query Service
+// ======================================================
+
+const executionStore = require(
+  "../execution-store/executionStore"
+);
+
+const {
+  createExecutionHistory,
+} = require(
+  "./executionHistory"
+);
+
+const {
+  createExecutionSummary,
+} = require(
+  "./executionSummary"
+);
+
+// ======================================================
+// Query Options
+// ======================================================
+
+function normalizeOptionalString(
+  value
+) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized =
+    value.trim();
+
+  return normalized || undefined;
+}
+
+function normalizeLimit(value) {
+  return (
+    Number.isInteger(value) &&
+    value > 0
+  )
+    ? value
+    : undefined;
+}
+
+function normalizeOffset(value) {
+  return (
+    Number.isInteger(value) &&
+    value >= 0
+  )
+    ? value
+    : 0;
+}
+
+function normalizeQueryOptions(
+  options = {}
+) {
+  return {
+    pipeline:
+      normalizeOptionalString(
+        options.pipeline
+      ),
+
+    status:
+      normalizeOptionalString(
+        options.status
+      ),
+
+    limit:
+      normalizeLimit(
+        options.limit
+      ),
+
+    offset:
+      normalizeOffset(
+        options.offset
+      ),
+  };
+}
+
+function createCountOptions(
+  queryOptions
+) {
+  return {
+    pipeline:
+      queryOptions.pipeline,
+
+    status:
+      queryOptions.status,
+  };
+}
+
+// ======================================================
+// Get Execution
+// ======================================================
+
+async function getExecution(
+  executionId
+) {
+  return executionStore.get(
+    executionId
+  );
+}
+
+// ======================================================
+// Execution History
+// ======================================================
+
+async function getExecutionHistory(
+  options = {}
+) {
+  const queryOptions =
+    normalizeQueryOptions(
+      options
+    );
+
+  const [
+    executions,
+    total,
+  ] = await Promise.all([
+    executionStore.list(
+      queryOptions
+    ),
+
+    executionStore.count(
+      createCountOptions(
+        queryOptions
+      )
+    ),
+  ]);
+
+  return createExecutionHistory({
+    total,
+
+    executions:
+      executions.map(
+        createExecutionSummary
+      ),
+
+    limit:
+      queryOptions.limit ||
+      null,
+
+    offset:
+      queryOptions.offset,
+  });
+}
+
+// ======================================================
+// Count
+// ======================================================
+
+async function countExecutions(
+  options = {}
+) {
+  const queryOptions =
+    normalizeQueryOptions(
+      options
+    );
+
+  return executionStore.count(
+    createCountOptions(
+      queryOptions
+    )
+  );
+}
+
+module.exports = {
+  getExecution,
+  getExecutionHistory,
+  countExecutions,
+};
+
+====================================================
+services\pipeline\analytics\executionAnalyticsService.js
+====================================================
+// ======================================================
+// Execution Analytics Service
+// ======================================================
+
+const executionStore = require(
+  "../execution-store/executionStore"
+);
+
+const {
+  createExecutionStatistics,
+} = require(
+  "./executionStatistics"
+);
+
+// ======================================================
+// Analytics
+// ======================================================
+
+async function getExecutionStatistics(
+  options = {}
+) {
+  const records =
+    await executionStore.list({
+      pipeline:
+        options.pipeline,
+
+      status:
+        options.status,
+    });
+
+  return createExecutionStatistics(
+    records
+  );
+}
+
+module.exports = {
+  getExecutionStatistics,
+};
+
+====================================================
+services\pipeline\execution-store\executionStore.js
+====================================================
+// ======================================================
+// Shared Pipeline Execution Store
+// ======================================================
+
+const {
+  createMemoryExecutionStore,
+} = require(
+  "./memoryExecutionStore"
+);
+
+const {
+  createSQLiteExecutionStore,
+} = require(
+  "./sqliteExecutionStore"
+);
+
+// ======================================================
+// Default Store
+// ======================================================
+
+const DEFAULT_STORE =
+  (
+    process.env
+      .EXECUTION_STORE ||
+    "sqlite"
+  ).toLowerCase();
+
+function createDefaultStore() {
+  switch (
+    DEFAULT_STORE
+  ) {
+    case "memory":
+      return createMemoryExecutionStore();
+
+    case "sqlite":
+      return createSQLiteExecutionStore();
+
+    default:
+      throw new Error(
+        `Unsupported execution store: ${DEFAULT_STORE}`
+      );
+  }
+}
+
+let activeStore =
+  createDefaultStore();
+
+// ======================================================
+// Store Validation
+// ======================================================
+
+function validateStore(store) {
+  if (
+    !store ||
+    typeof store !== "object"
+  ) {
+    throw new TypeError(
+      "A valid execution store is required."
+    );
+  }
+
+  const requiredMethods = [
+    "save",
+    "get",
+    "has",
+    "list",
+    "count",
+    "remove",
+    "clear",
+  ];
+
+  requiredMethods.forEach(
+    (method) => {
+      if (
+        typeof store[method] !==
+        "function"
+      ) {
+        throw new TypeError(
+          `Execution store must provide "${method}"().`
+        );
+      }
+    }
+  );
+
+  return store;
+}
+
+// ======================================================
+// Configuration
+// ======================================================
+
+function configureExecutionStore(
+  store
+) {
+  activeStore =
+    validateStore(
+      store
+    );
+
+  return activeStore;
+}
+
+function resetExecutionStore() {
+  activeStore =
+    createMemoryExecutionStore();
+
+  return activeStore;
+}
+
+function getExecutionStore() {
+  return activeStore;
+}
+
+// ======================================================
+// Delegated Operations
+// ======================================================
+
+async function save(record) {
+  return activeStore.save(
+    record
+  );
+}
+
+async function get(executionId) {
+  return activeStore.get(
+    executionId
+  );
+}
+
+async function has(executionId) {
+  return activeStore.has(
+    executionId
+  );
+}
+
+async function list(options = {}) {
+  return activeStore.list(
+    options
+  );
+}
+
+async function count(
+  options = {}
+) {
+  return activeStore.count(
+    options
+  );
+}
+
+async function remove(executionId) {
+  return activeStore.remove(
+    executionId
+  );
+}
+
+async function clear() {
+  return activeStore.clear();
+}
+
+module.exports = {
+  configureExecutionStore,
+  resetExecutionStore,
+  getExecutionStore,
+
+  save,
+  get,
+  has,
+  list,
+  count,
+  remove,
+  clear,
+};
+
+====================================================
+services\pipeline\lifecycle\runtimeLifecycleManager.js
+====================================================
+// ======================================================
+// Runtime Lifecycle Manager
+// ======================================================
+
+const PipelineError = require(
+  "../pipelineError"
+);
+
+const {
+  createRuntimeLifecycle,
+} = require(
+  "./createRuntimeLifecycle"
+);
+
+const {
+  createPipelineExecutionRecord,
+} = require(
+  "../execution-record/executionRecord"
+);
+
+const executionStore = require(
+  "../execution-store/executionStore"
+);
+
+// ======================================================
+// Lifecycle Error Normalization
+// ======================================================
+
+function normalizeLifecycleError(
+  error,
+  phase
+) {
+  if (
+    PipelineError.isPipelineError(
+      error
+    )
+  ) {
+    if (!error.stage) {
+      error.stage =
+        `runtime-${phase}`;
+    }
+
+    return error;
+  }
+
+  return new PipelineError({
+    code:
+      "PIPELINE_RUNTIME_LIFECYCLE_FAILED",
+
+    message:
+      `Pipeline runtime lifecycle failed during "${phase}".`,
+
+    stage:
+      `runtime-${phase}`,
+
+    statusCode:
+      error?.statusCode ||
+      500,
+
+    details: {
+      phase,
+
+      originalCode:
+        error?.code ||
+        null,
+
+      originalMessage:
+        error?.message ||
+        null,
+    },
+
+    cause:
+      error,
+  });
+}
+
+// ======================================================
+// Cleanup Failure Attachment
+// ======================================================
+
+function attachCleanupFailure(
+  primaryError,
+  cleanupError
+) {
+  if (!primaryError) {
+    return cleanupError;
+  }
+
+  const primaryDetails =
+    primaryError.details &&
+    typeof primaryError.details ===
+      "object"
+      ? primaryError.details
+      : {};
+
+  primaryError.details = {
+    ...primaryDetails,
+
+    cleanupFailure: {
+      code:
+        cleanupError.code,
+
+      message:
+        cleanupError.message,
+
+      stage:
+        cleanupError.stage,
+    },
+  };
+
+  return primaryError;
+}
+
+// ======================================================
+// Store Failure Handling
+// ======================================================
+
+function normalizeStoreError(error) {
+  return {
+    code:
+      error?.code ||
+      "PIPELINE_EXECUTION_STORE_FAILED",
+
+    message:
+      error?.message ||
+      "Pipeline execution record could not be stored.",
+  };
+}
+
+async function storeExecutionRecord(
+  context,
+  record
+) {
+  try {
+    await executionStore.save(
+      record
+    );
+
+    return true;
+  } catch (error) {
+    if (
+      !context.metadata ||
+      typeof context.metadata !==
+        "object"
+    ) {
+      context.metadata = {};
+    }
+
+    context.metadata
+      .executionStoreError =
+      normalizeStoreError(
+        error
+      );
+
+    return false;
+  }
+}
+
+// ======================================================
+// Factory
+// ======================================================
+
+function createRuntimeLifecycleManager({
+  runtime,
+  runner,
+} = {}) {
+  if (
+    !runtime ||
+    typeof runtime !== "object"
+  ) {
+    throw new TypeError(
+      "Runtime lifecycle manager requires a runtime."
+    );
+  }
+
+  if (
+    !runner ||
+    typeof runner.run !== "function"
+  ) {
+    throw new TypeError(
+      "Runtime lifecycle manager requires a runner with run()."
+    );
+  }
+
+  const lifecycle =
+    createRuntimeLifecycle({
+      async initialize(
+        context,
+        request
+      ) {
+        return runtime.initialize(
+          context,
+          request
+        );
+      },
+
+      async beforeExecution(
+        context,
+        request
+      ) {
+        return runtime.beforeExecution(
+          context,
+          request
+        );
+      },
+
+      async execute({
+        definition,
+        context,
+      }) {
+        return runner.run({
+          name:
+            definition.name,
+
+          context,
+
+          stages:
+            definition.stages,
+        });
+      },
+
+      async afterExecution(
+        context,
+        request
+      ) {
+        return runtime.afterExecution(
+          context,
+          request
+        );
+      },
+
+      async cleanup(
+        context,
+        request
+      ) {
+        return runtime.cleanup(
+          context,
+          request
+        );
+      },
+    });
+
+  async function run({
+    definition,
+    context,
+    request,
+    resolution,
+    onExecutionCompleted = null,
+  } = {}) {
+    let primaryError =
+      null;
+
+    let result;
+
+    try {
+      try {
+        await lifecycle.initialize(
+          context,
+          request
+        );
+      } catch (error) {
+        throw normalizeLifecycleError(
+          error,
+          "initialize"
+        );
+      }
+
+      try {
+        await lifecycle.beforeExecution(
+          context,
+          request
+        );
+      } catch (error) {
+        throw normalizeLifecycleError(
+          error,
+          "before-execution"
+        );
+      }
+
+      await lifecycle.execute({
+        definition,
+        context,
+      });
+
+      if (
+        typeof onExecutionCompleted ===
+        "function"
+      ) {
+        onExecutionCompleted(
+          context
+        );
+      }
+
+      try {
+        await lifecycle.afterExecution(
+          context,
+          request
+        );
+      } catch (error) {
+        throw normalizeLifecycleError(
+          error,
+          "after-execution"
+        );
+      }
+
+      result =
+        runtime.createResult(
+          context,
+          {
+            request,
+            resolution,
+          }
+        );
+    } catch (error) {
+      primaryError =
+        error;
+    }
+
+    try {
+      await lifecycle.cleanup(
+        context,
+        request
+      );
+    } catch (error) {
+      const cleanupError =
+        normalizeLifecycleError(
+          error,
+          "cleanup"
+        );
+
+      primaryError =
+        attachCleanupFailure(
+          primaryError,
+          cleanupError
+        );
+    }
+
+    context.executionRecord =
+      createPipelineExecutionRecord({
+        context,
+        request,
+        resolution,
+
+        error:
+          primaryError,
+      });
+
+    await storeExecutionRecord(
+      context,
+      context.executionRecord
+    );
+
+    if (primaryError) {
+      throw primaryError;
+    }
+
+    return result;
+  }
+
+  return Object.freeze({
+    run,
+  });
+}
+
+module.exports = {
+  createRuntimeLifecycleManager,
+};

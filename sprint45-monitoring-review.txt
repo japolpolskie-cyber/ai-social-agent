@@ -1,0 +1,197 @@
+
+====================================================
+controllers\providers.controller.js
+====================================================
+// ======================================================
+// Providers Controller
+// ======================================================
+
+const providerManager = require("../services/providerManager");
+const providerHealthService = require("../services/providerHealthService");
+
+function getProviders(req, res) {
+  const providers = providerManager.listProviders();
+  const enabledProviders = providerManager.getEnabledProviders();
+
+  res.json({
+    success: true,
+    default: providerManager.getDefaultProviderName(),
+    enabled: enabledProviders,
+    count: enabledProviders.length,
+    providers,
+  });
+}
+
+function getProviderHealth(req, res) {
+  const health = providerHealthService.checkAllProviders();
+
+  res.json({
+    success: true,
+    providers: health,
+  });
+}
+
+module.exports = {
+  getProviders,
+  getProviderHealth,
+};
+
+====================================================
+controllers\health.controller.js
+====================================================
+const responseService = require('../services/responseService');
+
+function health(req, res) {
+  return responseService.success(res, {
+    status: 'ok',
+    service: 'AI Social Agent',
+    version: '1.0.0',
+    database: 'connected',
+    defaultProvider: 'gemini',
+    timestamp: new Date().toISOString(),
+  });
+}
+
+module.exports = {
+  health,
+};
+
+====================================================
+services\pipeline\pipelineDiscoveryService.js
+====================================================
+// ======================================================
+// Pipeline Discovery Service
+// ======================================================
+
+const {
+  bootstrapPipelineRegistry,
+} = require(
+  "./registry/bootstrapPipelineRegistry"
+);
+
+const {
+  createPipelineCatalog,
+} = require(
+  "./catalog/pipelineCatalog"
+);
+
+// ======================================================
+// Catalog Factory
+// ======================================================
+
+function getPipelineCatalog() {
+  const pipelineRegistry =
+    bootstrapPipelineRegistry();
+
+  return createPipelineCatalog({
+    registry: pipelineRegistry,
+  });
+}
+
+// ======================================================
+// Discovery Operations
+// ======================================================
+
+function getAllPipelines() {
+  const pipelineCatalog =
+    getPipelineCatalog();
+
+  const pipelines =
+    pipelineCatalog.list();
+
+  return {
+    count: pipelines.length,
+    pipelines,
+  };
+}
+
+function getPipelineByName(name) {
+  const pipelineCatalog =
+    getPipelineCatalog();
+
+  const pipeline =
+    pipelineCatalog.get(name);
+
+  if (!pipeline) {
+    const error = new Error(
+      `Pipeline "${name}" was not found.`
+    );
+
+    error.name =
+      "PipelineNotFoundError";
+
+    error.code =
+      "PIPELINE_NOT_FOUND";
+
+    error.statusCode = 404;
+
+    throw error;
+  }
+
+  return {
+    pipeline,
+  };
+}
+
+module.exports = {
+  getAllPipelines,
+  getPipelineByName,
+};
+
+====================================================
+config\providers.js
+====================================================
+// ======================================================
+// Provider Configuration
+// ======================================================
+
+module.exports = {
+  defaultProvider: process.env.DEFAULT_PROVIDER || "gemini",
+
+  fallback: {
+    enabled: true,
+
+    order: [
+      "gemini",
+      "groq",
+      "openrouter",
+    ],
+
+    policy: {
+      rate_limit: true,
+      quota: true,
+      timeout: true,
+      network: true,
+      service_unavailable: true,
+
+      authentication: false,
+      invalid_request: false,
+      configuration: false,
+      unknown: false,
+    },
+  },
+
+  providers: {
+    gemini: {
+      enabled: true,
+    },
+
+    groq: {
+      enabled: true,
+    },
+
+    openrouter: {
+      enabled: true,
+    },
+  },
+};
+
+====================================================
+config\provider.js
+====================================================
+FILE NOT FOUND
+
+====================================================
+config\providerConfig.js
+====================================================
+FILE NOT FOUND

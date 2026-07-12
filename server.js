@@ -79,6 +79,10 @@ const executionReplayRoutes =
     "./routes/executionReplay.routes"
   );
 
+const monitoringRoutes = require(
+  "./routes/monitoring.routes"
+);
+
 // ======================================================
 // Application Setup
 // ======================================================
@@ -153,6 +157,11 @@ app.use(
 app.use(
   "/pipelines",
   pipelineRoutes
+);
+
+app.use(
+  "/monitoring",
+  monitoringRoutes
 );
 
 // Must remain before /executions.
