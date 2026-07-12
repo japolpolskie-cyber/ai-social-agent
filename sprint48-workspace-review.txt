@@ -1,0 +1,486 @@
+
+====================================================
+public\index.html
+====================================================
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Social Agent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="app-header">
+            <div>
+                <h1>🚀 AI Social Agent</h1>
+                <p>AI Content Playground</p>
+            </div>
+
+            <span class="provider-badge">🟢 Gemini</span>
+        </header>
+
+        <div class="app-layout">
+
+            <div class="panel">
+                <h2>⚙️ Content Setup</h2>
+
+                <label for="topicInput">Topic</label>
+                <input id="topicInput" type="text" value="AI automation for small businesses">
+
+                <label for="platformInput">Platform</label>
+                <select id="platformInput">
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="facebook">Facebook</option>
+                </select>
+
+                <label for="typeInput">Content Type</label>
+                <select id="typeInput">
+                    <option value="post">Post</option>
+                    <option value="caption">Caption</option>
+                </select>
+
+                <label for="toneInput">Tone</label>
+                <input id="toneInput" type="text" value="professional but friendly">
+
+                <label for="audienceInput">Audience</label>
+                <input id="audienceInput" type="text" value="small business owners">
+
+                <button id="generateBtn">✨ Generate</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>✨ Generated Content</h2>
+
+                    <div class="toolbar">
+                        <button id="copyBtn" class="small-btn">📋 Copy</button>
+                        <button id="clearBtn" class="small-btn secondary">🗑 Clear</button>
+                    </div>
+                </div>
+
+                <div id="output" class="output">Waiting...</div>
+
+                <div class="stats">
+                    <span id="charCount">Characters: 0</span>
+                    <span id="wordCount">Words: 0</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="toast" class="toast"></div>
+    
+    <script src="modules/api.js"></script>
+    <script src="modules/ui.js"></script>
+    <script src="modules/stats.js"></script>
+    <script src="modules/clipboard.js"></script>
+    <script src="modules/loading.js"></script>
+    <script src="modules/toast.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
+
+====================================================
+public\style.css
+====================================================
+/* =========================================================
+   AI SOCIAL AGENT
+   Version 0.2
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f3f4f6;
+    color: #111827;
+}
+
+/* ==========================
+   MAIN CONTAINER
+========================== */
+
+.container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 30px;
+}
+
+/* ==========================
+   HEADER
+========================== */
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.app-header h1 {
+    font-size: 36px;
+    margin-bottom: 8px;
+}
+
+.app-header p {
+    color: #6b7280;
+}
+
+.provider-badge {
+    background: #10b981;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* ==========================
+   LAYOUT
+========================== */
+
+.app-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+/* ==========================
+   PANELS
+========================== */
+
+.panel {
+    background: white;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+.panel h2 {
+    margin-bottom: 20px;
+}
+
+/* ==========================
+   FORM
+========================== */
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: .2s;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* ==========================
+   BUTTONS
+========================== */
+
+button {
+    cursor: pointer;
+    transition: .2s;
+}
+
+#generateBtn {
+    width: 100%;
+    border: none;
+    background: #111827;
+    color: white;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#generateBtn:hover {
+    background: #1f2937;
+}
+
+/* ==========================
+   OUTPUT
+========================== */
+
+.output {
+    min-height: 360px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    white-space: pre-wrap;
+    line-height: 1.7;
+    overflow-y: auto;
+}
+
+/* ==========================
+   PANEL HEADER
+========================== */
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+}
+
+/* ==========================
+   SMALL BUTTONS
+========================== */
+
+.small-btn {
+    border: none;
+    background: #111827;
+    color: white;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.small-btn:hover {
+    background: #374151;
+}
+
+.secondary {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.secondary:hover {
+    background: #d1d5db;
+}
+
+/* ==========================
+   STATS
+========================== */
+
+.stats {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media (max-width: 900px) {
+
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+}
+
+.toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    background: #111827;
+    color: white;
+    padding: 14px 18px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: .25s;
+    font-weight: bold;
+    z-index: 999;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+====================================================
+public\app.js
+====================================================
+// ======================================================
+// AI Social Agent
+// Frontend v0.9
+// ======================================================
+
+const API_ENDPOINT = "/ai/generate";
+
+const generateBtn = document.getElementById("generateBtn");
+const copyBtn = document.getElementById("copyBtn");
+const clearBtn = document.getElementById("clearBtn");
+
+const output = document.getElementById("output");
+
+generateBtn.addEventListener("click", generateContent);
+copyBtn.addEventListener("click", handleCopy);
+clearBtn.addEventListener("click", handleClear);
+
+// ======================================================
+// Generate Content
+// ======================================================
+
+async function generateContent() {
+    const payload = getFormPayload();
+
+    if (!payload.topic) {
+        showToast("⚠️ Please enter a topic");
+        return;
+    }
+
+    setGeneratingState(true);
+    showLoading();
+    updateStats("");
+    startLoading();
+
+    try {
+        const data = await generateAIContent(payload);
+
+        if (!data.success) {
+            throw new Error(data.error || "Generation failed.");
+        }
+
+        showOutput(data.output);
+        updateStats(data.output);
+        showToast("✅ Content generated");
+    } catch (err) {
+        showError(err.message || "Something went wrong.");
+        showToast("❌ Something went wrong");
+    } finally {
+        stopLoading();
+        setGeneratingState(false);
+    }
+}
+
+// ======================================================
+// API
+// ======================================================
+
+async function generateAIContent(payload) {
+    const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Server error.");
+    }
+
+    return data;
+}
+
+// ======================================================
+// Form
+// ======================================================
+
+function getFormPayload() {
+    return {
+        topic: getInputValue("topicInput"),
+        platform: getInputValue("platformInput"),
+        type: getInputValue("typeInput"),
+        tone: getInputValue("toneInput"),
+        audience: getInputValue("audienceInput")
+    };
+}
+
+function getInputValue(id) {
+    const element = document.getElementById(id);
+    return element ? element.value.trim() : "";
+}
+
+// ======================================================
+// Buttons
+// ======================================================
+
+async function handleCopy() {
+    const text = output.textContent.trim();
+
+    if (!text || text.includes("Your generated content will appear here")) {
+        showToast("⚠️ Nothing to copy");
+        return;
+    }
+
+    const copied = await copyText(text);
+
+    if (copied) {
+        showToast("✅ Copied to clipboard");
+    } else {
+        showToast("❌ Copy failed");
+    }
+}
+
+function handleClear() {
+    showWaiting();
+    updateStats("");
+    showToast("🗑 Output cleared");
+}
+
+function setGeneratingState(isGenerating) {
+    generateBtn.disabled = isGenerating;
+    generateBtn.textContent = isGenerating ? "Generating..." : "Generate";
+}
+
+// ======================================================
+// Clipboard
+// ======================================================
+
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (err) {
+        console.error("Clipboard error:", err);
+        return false;
+    }
+}
+
+====================================================
+public\loading.js
+====================================================
+FILE NOT FOUND

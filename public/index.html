@@ -73,7 +73,19 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    
+
+    <script src="/navigation.js"></script>
+    <script src="/components/platformLayout.js"></script>
+
+    <script>
+      initializePlatformLayout({
+        page: "generate",
+        title: "Generate",
+        description:
+          "Create, validate, and repair AI-powered social content."
+      });
+    </script>
+
     <script src="modules/api.js"></script>
     <script src="modules/ui.js"></script>
     <script src="modules/stats.js"></script>

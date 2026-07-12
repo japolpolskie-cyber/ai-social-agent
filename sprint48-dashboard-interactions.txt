@@ -1,0 +1,2296 @@
+
+====================================================
+public\dashboard.html
+====================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    AI Social Agent Platform
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="/dashboard.css"
+  >
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- ============================================ -->
+    <!-- Header -->
+    <!-- ============================================ -->
+
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">
+          AI AUTOMATION PLATFORM
+        </p>
+
+        <h1>
+          AI Social Agent
+        </h1>
+
+        <p class="header-description">
+          Pipeline execution, provider health,
+          analytics, replay, and monitoring.
+        </p>
+      </div>
+
+      <div
+        id="systemStatus"
+        class="status-badge status-loading"
+      >
+        <span class="status-dot"></span>
+
+        <span id="systemStatusText">
+          Loading
+        </span>
+      </div>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- Error State -->
+    <!-- ============================================ -->
+
+    <section
+      id="errorPanel"
+      class="error-panel hidden"
+    >
+      <h2>
+        Dashboard unavailable
+      </h2>
+
+      <p id="errorMessage">
+        The dashboard could not load.
+      </p>
+
+      <button
+        id="retryButton"
+        type="button"
+      >
+        Retry
+      </button>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- Main Dashboard -->
+    <!-- ============================================ -->
+
+    <main id="dashboardContent">
+
+      <!-- ========================================== -->
+      <!-- Overview -->
+      <!-- ========================================== -->
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">
+              OVERVIEW
+            </p>
+
+            <h2>
+              Platform Status
+            </h2>
+          </div>
+
+          <p
+            id="lastUpdated"
+            class="last-updated"
+          >
+            Waiting for data...
+          </p>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <p class="stat-label">
+              Service
+            </p>
+
+            <p
+              id="serviceName"
+              class="stat-value stat-value-small"
+            >
+              —
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Version
+            </p>
+
+            <p
+              id="serviceVersion"
+              class="stat-value"
+            >
+              —
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Environment
+            </p>
+
+            <p
+              id="environment"
+              class="stat-value stat-value-small"
+            >
+              —
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Execution Store
+            </p>
+
+            <p
+              id="storeType"
+              class="stat-value stat-value-small"
+            >
+              —
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- Execution Statistics -->
+      <!-- ========================================== -->
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">
+              EXECUTIONS
+            </p>
+
+            <h2>
+              Runtime Analytics
+            </h2>
+          </div>
+        </div>
+
+        <div class="stats-grid stats-grid-five">
+          <article class="stat-card">
+            <p class="stat-label">
+              Total Executions
+            </p>
+
+            <p
+              id="totalExecutions"
+              class="stat-value"
+            >
+              0
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Successful
+            </p>
+
+            <p
+              id="successfulExecutions"
+              class="stat-value success-text"
+            >
+              0
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Failed
+            </p>
+
+            <p
+              id="failedExecutions"
+              class="stat-value failure-text"
+            >
+              0
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Success Rate
+            </p>
+
+            <p
+              id="successRate"
+              class="stat-value"
+            >
+              0%
+            </p>
+          </article>
+
+          <article class="stat-card">
+            <p class="stat-label">
+              Average Duration
+            </p>
+
+            <p
+              id="averageDuration"
+              class="stat-value stat-value-small"
+            >
+              0 ms
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- Providers and Pipelines -->
+      <!-- ========================================== -->
+
+      <section class="two-column-grid">
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">
+                PROVIDERS
+              </p>
+
+              <h2>
+                Provider Health
+              </h2>
+            </div>
+
+            <span
+              id="providerCount"
+              class="count-badge"
+            >
+              0
+            </span>
+          </div>
+
+          <div
+            id="providersList"
+            class="list-container"
+          >
+            <p class="empty-state">
+              Loading providers...
+            </p>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-kicker">
+                PIPELINES
+              </p>
+
+              <h2>
+                Registered Pipelines
+              </h2>
+            </div>
+
+            <span
+              id="pipelineCount"
+              class="count-badge"
+            >
+              0
+            </span>
+          </div>
+
+          <div
+            id="pipelinesList"
+            class="list-container"
+          >
+            <p class="empty-state">
+              Loading pipelines...
+            </p>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- Recent Executions -->
+      <!-- ========================================== -->
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">
+              ACTIVITY
+            </p>
+
+            <h2>
+              Recent Executions
+            </h2>
+          </div>
+
+          <button
+            id="refreshButton"
+            class="secondary-button"
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  Execution ID
+                </th>
+
+                <th>
+                  Pipeline
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Duration
+                </th>
+
+                <th>
+                  Started
+                </th>
+              </tr>
+            </thead>
+
+            <tbody id="executionsTableBody">
+              <tr>
+                <td
+                  colspan="5"
+                  class="empty-table"
+                >
+                  Loading executions...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ============================================ -->
+    <!-- Footer -->
+    <!-- ============================================ -->
+
+    <footer class="dashboard-footer">
+      <span>
+        AI Social Agent Platform
+      </span>
+
+      <span>
+        Local development dashboard
+      </span>
+    </footer>
+
+  </div>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>
+
+====================================================
+public\dashboard.css
+====================================================
+/* ====================================================== */
+/* Dashboard Variables */
+/* ====================================================== */
+
+:root {
+  --background:
+    #0b1020;
+
+  --background-soft:
+    #11182b;
+
+  --panel:
+    rgba(18, 26, 46, 0.92);
+
+  --panel-hover:
+    rgba(24, 34, 58, 0.98);
+
+  --border:
+    rgba(148, 163, 184, 0.16);
+
+  --border-strong:
+    rgba(148, 163, 184, 0.28);
+
+  --text:
+    #f8fafc;
+
+  --text-soft:
+    #cbd5e1;
+
+  --text-muted:
+    #8491a7;
+
+  --accent:
+    #7c9cff;
+
+  --success:
+    #4ade80;
+
+  --warning:
+    #facc15;
+
+  --danger:
+    #fb7185;
+
+  --shadow:
+    0 18px 50px
+    rgba(0, 0, 0, 0.24);
+
+  --radius-large:
+    20px;
+
+  --radius-medium:
+    14px;
+
+  --radius-small:
+    10px;
+}
+
+/* ====================================================== */
+/* Reset */
+/* ====================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+
+  margin: 0;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color:
+    var(--text);
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(77, 108, 255, 0.18),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(93, 224, 230, 0.10),
+      transparent 28%
+    ),
+    var(--background);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* ====================================================== */
+/* Shell */
+/* ====================================================== */
+
+.app-shell {
+  width: min(
+    1480px,
+    calc(100% - 32px)
+  );
+
+  margin:
+    0 auto;
+
+  padding:
+    34px 0 26px;
+}
+
+/* ====================================================== */
+/* Header */
+/* ====================================================== */
+
+.dashboard-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 24px;
+
+  margin-bottom: 32px;
+
+  padding:
+    28px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-large);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(25, 35, 61, 0.96),
+      rgba(13, 20, 37, 0.96)
+    );
+
+  box-shadow:
+    var(--shadow);
+}
+
+.eyebrow,
+.section-kicker {
+  margin:
+    0 0 8px;
+
+  color:
+    var(--accent);
+
+  font-size:
+    0.72rem;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.16em;
+}
+
+.dashboard-header h1 {
+  margin:
+    0;
+
+  font-size:
+    clamp(
+      2rem,
+      5vw,
+      3.3rem
+    );
+
+  line-height:
+    1.05;
+}
+
+.header-description {
+  max-width:
+    660px;
+
+  margin:
+    14px 0 0;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    1rem;
+
+  line-height:
+    1.7;
+}
+
+/* ====================================================== */
+/* Status */
+/* ====================================================== */
+
+.status-badge {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+
+  min-width:
+    max-content;
+
+  padding:
+    10px 14px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--text-soft);
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  font-size:
+    0.84rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.06em;
+}
+
+.status-dot {
+  width:
+    9px;
+
+  height:
+    9px;
+
+  border-radius:
+    50%;
+
+  background:
+    currentColor;
+
+  box-shadow:
+    0 0 14px
+    currentColor;
+}
+
+.status-healthy {
+  color:
+    var(--success);
+}
+
+.status-degraded {
+  color:
+    var(--warning);
+}
+
+.status-unhealthy {
+  color:
+    var(--danger);
+}
+
+.status-loading {
+  color:
+    var(--text-muted);
+}
+
+/* ====================================================== */
+/* Sections */
+/* ====================================================== */
+
+.section {
+  margin-bottom:
+    26px;
+
+  padding:
+    24px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-large);
+
+  background:
+    var(--panel);
+
+  box-shadow:
+    var(--shadow);
+}
+
+.section-heading,
+.panel-header {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    18px;
+
+  margin-bottom:
+    20px;
+}
+
+.section-heading h2,
+.panel-header h2 {
+  margin:
+    0;
+
+  font-size:
+    1.2rem;
+}
+
+.last-updated {
+  margin:
+    0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.82rem;
+}
+
+/* ====================================================== */
+/* Statistics */
+/* ====================================================== */
+
+.stats-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    14px;
+}
+
+.stats-grid-five {
+  grid-template-columns:
+    repeat(
+      5,
+      minmax(0, 1fr)
+    );
+}
+
+.stat-card {
+  min-height:
+    128px;
+
+  padding:
+    18px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-medium);
+
+  background:
+    rgba(255, 255, 255, 0.025);
+
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.stat-card:hover {
+  border-color:
+    var(--border-strong);
+
+  background:
+    var(--panel-hover);
+
+  transform:
+    translateY(-2px);
+}
+
+.stat-label {
+  margin:
+    0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.78rem;
+
+  font-weight:
+    700;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.07em;
+}
+
+.stat-value {
+  margin:
+    24px 0 0;
+
+  font-size:
+    clamp(
+      1.8rem,
+      4vw,
+      2.6rem
+    );
+
+  font-weight:
+    800;
+}
+
+.stat-value-small {
+  font-size:
+    clamp(
+      1.1rem,
+      3vw,
+      1.55rem
+    );
+}
+
+.success-text {
+  color:
+    var(--success);
+}
+
+.failure-text {
+  color:
+    var(--danger);
+}
+
+/* ====================================================== */
+/* Two Column Panels */
+/* ====================================================== */
+
+.two-column-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    26px;
+
+  margin-bottom:
+    26px;
+}
+
+.panel {
+  padding:
+    24px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-large);
+
+  background:
+    var(--panel);
+
+  box-shadow:
+    var(--shadow);
+}
+
+.count-badge {
+  display:
+    grid;
+
+  min-width:
+    38px;
+
+  height:
+    38px;
+
+  place-items:
+    center;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--text-soft);
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  font-size:
+    0.86rem;
+
+  font-weight:
+    800;
+}
+
+/* ====================================================== */
+/* Lists */
+/* ====================================================== */
+
+.list-container {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    12px;
+}
+
+.list-item {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    14px;
+
+  padding:
+    15px 16px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-medium);
+
+  background:
+    rgba(255, 255, 255, 0.025);
+}
+
+.list-item-main {
+  min-width:
+    0;
+}
+
+.list-item-title {
+  margin:
+    0;
+
+  font-size:
+    0.96rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    capitalize;
+}
+
+.list-item-description {
+  margin:
+    5px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.8rem;
+
+  line-height:
+    1.45;
+}
+
+.health-indicator {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  min-width:
+    max-content;
+
+  font-size:
+    0.76rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+}
+
+.health-indicator::before {
+  width:
+    8px;
+
+  height:
+    8px;
+
+  border-radius:
+    50%;
+
+  background:
+    currentColor;
+
+  content:
+    "";
+}
+
+.health-healthy {
+  color:
+    var(--success);
+}
+
+.health-unhealthy {
+  color:
+    var(--danger);
+}
+
+.pipeline-tags {
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    6px;
+
+  margin-top:
+    10px;
+}
+
+.tag {
+  padding:
+    4px 8px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.68rem;
+}
+
+/* ====================================================== */
+/* Table */
+/* ====================================================== */
+
+.table-container {
+  overflow-x:
+    auto;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-medium);
+}
+
+table {
+  width:
+    100%;
+
+  border-collapse:
+    collapse;
+
+  min-width:
+    820px;
+}
+
+th,
+td {
+  padding:
+    15px 16px;
+
+  border-bottom:
+    1px solid var(--border);
+
+  text-align:
+    left;
+}
+
+th {
+  color:
+    var(--text-muted);
+
+  background:
+    rgba(255, 255, 255, 0.025);
+
+  font-size:
+    0.72rem;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.08em;
+}
+
+td {
+  color:
+    var(--text-soft);
+
+  font-size:
+    0.86rem;
+}
+
+tbody tr:last-child td {
+  border-bottom:
+    0;
+}
+
+tbody tr:hover {
+  background:
+    rgba(255, 255, 255, 0.025);
+}
+
+.execution-id {
+  max-width:
+    310px;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text);
+
+  font-family:
+    "Cascadia Code",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.execution-status {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  font-size:
+    0.75rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+}
+
+.execution-status::before {
+  width:
+    7px;
+
+  height:
+    7px;
+
+  border-radius:
+    50%;
+
+  background:
+    currentColor;
+
+  content:
+    "";
+}
+
+.execution-success {
+  color:
+    var(--success);
+}
+
+.execution-failed {
+  color:
+    var(--danger);
+}
+
+.empty-state,
+.empty-table {
+  color:
+    var(--text-muted);
+
+  text-align:
+    center;
+}
+
+/* ====================================================== */
+/* Buttons */
+/* ====================================================== */
+
+button {
+  border:
+    0;
+
+  cursor:
+    pointer;
+}
+
+.secondary-button,
+#errorPanel button {
+  padding:
+    10px 16px;
+
+  border:
+    1px solid var(--border-strong);
+
+  border-radius:
+    var(--radius-small);
+
+  color:
+    var(--text);
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  font-weight:
+    800;
+
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.secondary-button:hover,
+#errorPanel button:hover {
+  background:
+    rgba(255, 255, 255, 0.10);
+
+  transform:
+    translateY(-1px);
+}
+
+.secondary-button:disabled {
+  cursor:
+    wait;
+
+  opacity:
+    0.6;
+}
+
+/* ====================================================== */
+/* Error Panel */
+/* ====================================================== */
+
+.error-panel {
+  margin-bottom:
+    26px;
+
+  padding:
+    22px;
+
+  border:
+    1px solid
+    rgba(251, 113, 133, 0.35);
+
+  border-radius:
+    var(--radius-large);
+
+  background:
+    rgba(127, 29, 29, 0.20);
+}
+
+.error-panel h2 {
+  margin:
+    0;
+}
+
+.error-panel p {
+  margin:
+    10px 0 18px;
+
+  color:
+    var(--text-soft);
+}
+
+.hidden {
+  display:
+    none;
+}
+
+/* ====================================================== */
+/* Footer */
+/* ====================================================== */
+
+.dashboard-footer {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  padding:
+    12px 4px 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.76rem;
+}
+
+/* ====================================================== */
+/* Responsive */
+/* ====================================================== */
+
+@media (
+  max-width: 1100px
+) {
+  .stats-grid,
+  .stats-grid-five {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+@media (
+  max-width: 800px
+) {
+  .dashboard-header {
+    flex-direction:
+      column;
+  }
+
+  .two-column-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .section-heading {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+}
+
+@media (
+  max-width: 560px
+) {
+  .app-shell {
+    width:
+      min(
+        100% - 18px,
+        1480px
+      );
+
+    padding-top:
+      10px;
+  }
+
+  .dashboard-header,
+  .section,
+  .panel {
+    padding:
+      18px;
+
+    border-radius:
+      16px;
+  }
+
+  .stats-grid,
+  .stats-grid-five {
+    grid-template-columns:
+      1fr;
+  }
+
+  .dashboard-footer {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+}
+
+====================================================
+public\dashboard.js
+====================================================
+// ======================================================
+// Dashboard UI
+// ======================================================
+
+const DASHBOARD_ENDPOINT =
+  "/dashboard";
+
+// ======================================================
+// DOM References
+// ======================================================
+
+const elements = {
+  dashboardContent:
+    document.getElementById(
+      "dashboardContent"
+    ),
+
+  errorPanel:
+    document.getElementById(
+      "errorPanel"
+    ),
+
+  errorMessage:
+    document.getElementById(
+      "errorMessage"
+    ),
+
+  retryButton:
+    document.getElementById(
+      "retryButton"
+    ),
+
+  refreshButton:
+    document.getElementById(
+      "refreshButton"
+    ),
+
+  systemStatus:
+    document.getElementById(
+      "systemStatus"
+    ),
+
+  systemStatusText:
+    document.getElementById(
+      "systemStatusText"
+    ),
+
+  lastUpdated:
+    document.getElementById(
+      "lastUpdated"
+    ),
+
+  serviceName:
+    document.getElementById(
+      "serviceName"
+    ),
+
+  serviceVersion:
+    document.getElementById(
+      "serviceVersion"
+    ),
+
+  environment:
+    document.getElementById(
+      "environment"
+    ),
+
+  storeType:
+    document.getElementById(
+      "storeType"
+    ),
+
+  totalExecutions:
+    document.getElementById(
+      "totalExecutions"
+    ),
+
+  successfulExecutions:
+    document.getElementById(
+      "successfulExecutions"
+    ),
+
+  failedExecutions:
+    document.getElementById(
+      "failedExecutions"
+    ),
+
+  successRate:
+    document.getElementById(
+      "successRate"
+    ),
+
+  averageDuration:
+    document.getElementById(
+      "averageDuration"
+    ),
+
+  providerCount:
+    document.getElementById(
+      "providerCount"
+    ),
+
+  providersList:
+    document.getElementById(
+      "providersList"
+    ),
+
+  pipelineCount:
+    document.getElementById(
+      "pipelineCount"
+    ),
+
+  pipelinesList:
+    document.getElementById(
+      "pipelinesList"
+    ),
+
+  executionsTableBody:
+    document.getElementById(
+      "executionsTableBody"
+    ),
+};
+
+// ======================================================
+// Utility Helpers
+// ======================================================
+
+function escapeHTML(value) {
+  return String(
+    value ?? ""
+  )
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+}
+
+function formatNumber(value) {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+    return "0";
+  }
+
+  return new Intl
+    .NumberFormat()
+    .format(number);
+}
+
+function formatPercentage(value) {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+    return "0%";
+  }
+
+  return `${number.toFixed(
+    number % 1 === 0
+      ? 0
+      : 2
+  )}%`;
+}
+
+function formatDuration(
+  milliseconds
+) {
+  const value =
+    Number(milliseconds);
+
+  if (
+    !Number.isFinite(value)
+  ) {
+    return "0 ms";
+  }
+
+  if (value < 1000) {
+    return `${Math.round(
+      value
+    )} ms`;
+  }
+
+  return `${(
+    value /
+    1000
+  ).toFixed(2)} s`;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "—";
+  }
+
+  return new Intl
+    .DateTimeFormat(
+      undefined,
+      {
+        dateStyle:
+          "medium",
+
+        timeStyle:
+          "short",
+      }
+    )
+    .format(date);
+}
+
+function capitalize(value) {
+  const text =
+    String(
+      value ||
+      ""
+    );
+
+  if (!text) {
+    return "Unknown";
+  }
+
+  return (
+    text.charAt(0)
+      .toUpperCase() +
+    text.slice(1)
+  );
+}
+
+// ======================================================
+// Loading State
+// ======================================================
+
+function setLoading(
+  loading
+) {
+  elements.refreshButton.disabled =
+    loading;
+
+  elements.refreshButton.textContent =
+    loading
+      ? "Refreshing..."
+      : "Refresh";
+}
+
+// ======================================================
+// Error State
+// ======================================================
+
+function showError(error) {
+  elements.errorPanel.classList
+    .remove(
+      "hidden"
+    );
+
+  elements.errorMessage.textContent =
+    error?.message ||
+    "The dashboard could not load.";
+}
+
+function clearError() {
+  elements.errorPanel.classList
+    .add(
+      "hidden"
+    );
+}
+
+// ======================================================
+// System Status */
+/* ====================================================== */
+
+function renderSystemStatus(
+  status
+) {
+  const normalizedStatus =
+    String(
+      status ||
+      "unknown"
+    ).toLowerCase();
+
+  elements.systemStatus.className =
+    "status-badge";
+
+  if (
+    normalizedStatus ===
+    "healthy"
+  ) {
+    elements.systemStatus
+      .classList.add(
+        "status-healthy"
+      );
+  } else if (
+    normalizedStatus ===
+    "degraded"
+  ) {
+    elements.systemStatus
+      .classList.add(
+        "status-degraded"
+      );
+  } else {
+    elements.systemStatus
+      .classList.add(
+        "status-unhealthy"
+      );
+  }
+
+  elements.systemStatusText
+    .textContent =
+      capitalize(
+        normalizedStatus
+      );
+}
+
+// ======================================================
+// Overview */
+/* ====================================================== */
+
+function renderOverview(
+  dashboard
+) {
+  const overview =
+    dashboard.overview ||
+    {};
+
+  const monitoring =
+    dashboard.monitoring ||
+    {};
+
+  const store =
+    monitoring.store ||
+    {};
+
+  elements.serviceName.textContent =
+    overview.service ||
+    "AI Social Agent";
+
+  elements.serviceVersion.textContent =
+    overview.version ||
+    "—";
+
+  elements.environment.textContent =
+    capitalize(
+      overview.environment ||
+      "unknown"
+    );
+
+  elements.storeType.textContent =
+    `${capitalize(
+      store.type ||
+      "unknown"
+    )}${
+      store.persistent
+        ? " · Persistent"
+        : " · Temporary"
+    }`;
+
+  elements.lastUpdated.textContent =
+    `Updated ${formatDate(
+      monitoring.system
+        ?.timestamp
+    )}`;
+
+  renderSystemStatus(
+    overview.status
+  );
+}
+
+// ======================================================
+// Execution Statistics */
+/* ====================================================== */
+
+function renderExecutionStats(
+  dashboard
+) {
+  const executions =
+    dashboard.monitoring
+      ?.executions ||
+    {};
+
+  elements.totalExecutions
+    .textContent =
+      formatNumber(
+        executions.total
+      );
+
+  elements.successfulExecutions
+    .textContent =
+      formatNumber(
+        executions.success
+      );
+
+  elements.failedExecutions
+    .textContent =
+      formatNumber(
+        executions.failed
+      );
+
+  elements.successRate
+    .textContent =
+      formatPercentage(
+        executions.successRate
+      );
+
+  elements.averageDuration
+    .textContent =
+      formatDuration(
+        executions.averageDuration
+      );
+}
+
+// ======================================================
+// Providers */
+/* ====================================================== */
+
+function renderProviders(
+  dashboard
+) {
+  const providers =
+    dashboard.monitoring
+      ?.providers ||
+    {};
+
+  const health =
+    Array.isArray(
+      providers.health
+    )
+      ? providers.health
+      : [];
+
+  elements.providerCount
+    .textContent =
+      formatNumber(
+        providers.count ||
+        health.length
+      );
+
+  if (
+    health.length === 0
+  ) {
+    elements.providersList.innerHTML = `
+      <p class="empty-state">
+        No provider information available.
+      </p>
+    `;
+
+    return;
+  }
+
+  elements.providersList.innerHTML =
+    health
+      .map(
+        (provider) => {
+          const healthy =
+            Boolean(
+              provider.healthy
+            );
+
+          const providerName =
+            escapeHTML(
+              provider.name ||
+              "unknown"
+            );
+
+          const model =
+            escapeHTML(
+              provider.defaultModel ||
+              "No default model"
+            );
+
+          return `
+            <div class="list-item">
+              <div class="list-item-main">
+                <p class="list-item-title">
+                  ${providerName}
+                </p>
+
+                <p class="list-item-description">
+                  Default model: ${model}
+                </p>
+              </div>
+
+              <span
+                class="
+                  health-indicator
+                  ${
+                    healthy
+                      ? "health-healthy"
+                      : "health-unhealthy"
+                  }
+                "
+              >
+                ${
+                  healthy
+                    ? "Healthy"
+                    : "Unavailable"
+                }
+              </span>
+            </div>
+          `;
+        }
+      )
+      .join("");
+}
+
+// ======================================================
+// Pipelines */
+/* ====================================================== */
+
+function renderPipelines(
+  dashboard
+) {
+  const pipelineData =
+    dashboard.pipelines ||
+    {};
+
+  const pipelines =
+    Array.isArray(
+      pipelineData.pipelines
+    )
+      ? pipelineData.pipelines
+      : [];
+
+  elements.pipelineCount
+    .textContent =
+      formatNumber(
+        pipelineData.count ||
+        pipelines.length
+      );
+
+  if (
+    pipelines.length === 0
+  ) {
+    elements.pipelinesList.innerHTML = `
+      <p class="empty-state">
+        No pipelines registered.
+      </p>
+    `;
+
+    return;
+  }
+
+  elements.pipelinesList.innerHTML =
+    pipelines
+      .map(
+        (pipeline) => {
+          const tags =
+            Array.isArray(
+              pipeline.tags
+            )
+              ? pipeline.tags
+              : [];
+
+          const tagsHTML =
+            tags
+              .map(
+                (tag) => `
+                  <span class="tag">
+                    ${escapeHTML(tag)}
+                  </span>
+                `
+              )
+              .join("");
+
+          return `
+            <div class="list-item">
+              <div class="list-item-main">
+                <p class="list-item-title">
+                  ${escapeHTML(
+                    pipeline.name
+                  )}
+                </p>
+
+                <p class="list-item-description">
+                  ${escapeHTML(
+                    pipeline.description ||
+                    "No description available."
+                  )}
+                </p>
+
+                <div class="pipeline-tags">
+                  ${tagsHTML}
+                </div>
+              </div>
+
+              <span class="count-badge">
+                ${escapeHTML(
+                  pipeline.version ||
+                  "—"
+                )}
+              </span>
+            </div>
+          `;
+        }
+      )
+      .join("");
+}
+
+// ======================================================
+// Recent Executions */
+/* ====================================================== */
+
+function renderRecentExecutions(
+  dashboard
+) {
+  const executions =
+    Array.isArray(
+      dashboard.recentExecutions
+    )
+      ? dashboard
+          .recentExecutions
+      : [];
+
+  if (
+    executions.length === 0
+  ) {
+    elements.executionsTableBody
+      .innerHTML = `
+        <tr>
+          <td
+            colspan="5"
+            class="empty-table"
+          >
+            No executions recorded yet.
+          </td>
+        </tr>
+      `;
+
+    return;
+  }
+
+  elements.executionsTableBody
+    .innerHTML =
+      executions
+        .map(
+          (execution) => {
+            const status =
+              String(
+                execution.status ||
+                "unknown"
+              ).toLowerCase();
+
+            const statusClass =
+              status === "success"
+                ? "execution-success"
+                : "execution-failed";
+
+            return `
+              <tr>
+                <td
+                  class="execution-id"
+                  title="${escapeHTML(
+                    execution.executionId
+                  )}"
+                >
+                  ${escapeHTML(
+                    execution.executionId
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHTML(
+                    execution.pipeline ||
+                    "—"
+                  )}
+                </td>
+
+                <td>
+                  <span
+                    class="
+                      execution-status
+                      ${statusClass}
+                    "
+                  >
+                    ${escapeHTML(status)}
+                  </span>
+                </td>
+
+                <td>
+                  ${formatDuration(
+                    execution.duration
+                  )}
+                </td>
+
+                <td>
+                  ${formatDate(
+                    execution.startedAt
+                  )}
+                </td>
+              </tr>
+            `;
+          }
+        )
+        .join("");
+}
+
+// ======================================================
+// Full Render */
+/* ====================================================== */
+
+function renderDashboard(
+  dashboard
+) {
+  renderOverview(
+    dashboard
+  );
+
+  renderExecutionStats(
+    dashboard
+  );
+
+  renderProviders(
+    dashboard
+  );
+
+  renderPipelines(
+    dashboard
+  );
+
+  renderRecentExecutions(
+    dashboard
+  );
+}
+
+// ======================================================
+// Data Loading */
+/* ====================================================== */
+
+async function fetchDashboard() {
+  const response =
+    await fetch(
+      DASHBOARD_ENDPOINT,
+      {
+        headers: {
+          Accept:
+            "application/json",
+        },
+      }
+    );
+
+  const data =
+    await response.json();
+
+  if (
+    !response.ok ||
+    data.success !== true
+  ) {
+    throw new Error(
+      data.error?.message ||
+      data.error ||
+      "Dashboard request failed."
+    );
+  }
+
+  return data;
+}
+
+async function loadDashboard() {
+  clearError();
+
+  setLoading(
+    true
+  );
+
+  try {
+    const dashboard =
+      await fetchDashboard();
+
+    renderDashboard(
+      dashboard
+    );
+  } catch (error) {
+    console.error(
+      "Dashboard load failed:",
+      error
+    );
+
+    showError(
+      error
+    );
+
+    renderSystemStatus(
+      "unhealthy"
+    );
+  } finally {
+    setLoading(
+      false
+    );
+  }
+}
+
+// ======================================================
+// Events */
+/* ====================================================== */
+
+elements.refreshButton
+  .addEventListener(
+    "click",
+    loadDashboard
+  );
+
+elements.retryButton
+  .addEventListener(
+    "click",
+    loadDashboard
+  );
+
+document.addEventListener(
+  "DOMContentLoaded",
+  loadDashboard
+);
