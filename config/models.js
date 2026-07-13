@@ -12,7 +12,7 @@ module.exports = {
   models: {
     "gemini-flash": {
       provider: "gemini",
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL || "gemini-3.5-flash",
       enabled: true,
       useCase: "general",
     },
