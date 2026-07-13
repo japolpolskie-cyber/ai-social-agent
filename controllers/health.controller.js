@@ -1,14 +1,31 @@
 const responseService = require('../services/responseService');
 
+const healthService = require(
+  '../services/healthService'
+);
+
 function health(req, res) {
-  return responseService.success(res, {
-    status: 'ok',
-    service: 'AI Social Agent',
-    version: '1.0.0',
-    database: 'connected',
-    defaultProvider: 'gemini',
-    timestamp: new Date().toISOString(),
-  });
+  const status =
+    healthService
+      .getHealthStatus();
+
+  if (
+    status.healthy
+  ) {
+    return responseService.success(
+      res,
+      status
+    );
+  }
+
+  return res
+    .status(
+      503
+    )
+    .json({
+      success: false,
+      ...status,
+    });
 }
 
 module.exports = {

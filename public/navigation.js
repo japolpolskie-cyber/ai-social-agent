@@ -7,27 +7,21 @@ const NAVIGATION_ITEMS = [
     label: "Dashboard",
     href: "/dashboard.html",
     match: "dashboard.html",
-    icon: "◫",
+    icon: "D",
   },
-
   {
     label: "Generate",
     href: "/",
     match: "index.html",
-    icon: "✦",
+    icon: "+",
   },
-
   {
     label: "Executions",
     href: "/executions.html",
     match: "executions.html",
-    icon: "≡",
+    icon: "E",
   },
 ];
-
-// ======================================================
-// Active Page
-// ======================================================
 
 function getCurrentPage() {
   const pathname =
@@ -42,6 +36,14 @@ function getCurrentPage() {
     return "index.html";
   }
 
+  if (
+    pathname.endsWith(
+      "/execution-details.html"
+    )
+  ) {
+    return "executions.html";
+  }
+
   return pathname
     .split("/")
     .pop();
@@ -51,15 +53,9 @@ function isActiveItem(
   item,
   currentPage
 ) {
-  return (
-    item.match ===
-    currentPage
-  );
+  return item.match ===
+    currentPage;
 }
-
-// ======================================================
-// Styles
-// ======================================================
 
 function injectNavigationStyles() {
   if (
@@ -80,158 +76,196 @@ function injectNavigationStyles() {
 
   style.textContent = `
     .platform-navigation {
-      position: sticky;
+      position: fixed;
       top: 0;
+      right: 0;
+      left: 0;
       z-index: 1000;
-
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 24px;
+      min-height: var(--nav-height, 72px);
+      padding: 12px max(24px, calc((100vw - 1440px) / 2));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(9, 9, 11, 0.78);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+      backdrop-filter: blur(22px) saturate(140%);
+    }
 
-      width: 100%;
-
-      padding: 12px 24px;
-
-      border-bottom:
-        1px solid
-        rgba(148, 163, 184, 0.18);
-
-      background:
-        rgba(10, 15, 29, 0.94);
-
-      box-shadow:
-        0 10px 30px
-        rgba(0, 0, 0, 0.18);
-
-      backdrop-filter:
-        blur(16px);
+    .platform-navigation::after {
+      position: absolute;
+      right: 0;
+      bottom: -1px;
+      left: 0;
+      height: 1px;
+      pointer-events: none;
+      content: "";
+      background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.28), transparent);
     }
 
     .platform-navigation-brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 11px;
-
+      gap: 12px;
+      min-width: max-content;
       color: #f8fafc;
-
       text-decoration: none;
     }
 
     .platform-navigation-logo {
+      position: relative;
       display: grid;
-
-      width: 34px;
-      height: 34px;
-
+      width: 38px;
+      height: 38px;
       place-items: center;
+      overflow: hidden;
+      color: #ede9fe;
+      border: 1px solid rgba(139, 92, 246, 0.38);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(124, 58, 237, 0.26), rgba(99, 102, 241, 0.08));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px rgba(124, 58, 237, 0.12);
+      font-size: 0.72rem;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+    }
 
-      border:
-        1px solid
-        rgba(124, 156, 255, 0.38);
-
-      border-radius: 10px;
-
-      color: #c7d2fe;
-
-      background:
-        rgba(124, 156, 255, 0.14);
-
-      font-weight: 900;
+    .platform-navigation-logo::after {
+      position: absolute;
+      inset: auto -8px -12px auto;
+      width: 24px;
+      height: 24px;
+      content: "";
+      background: #8b5cf6;
+      border-radius: 50%;
+      filter: blur(10px);
     }
 
     .platform-navigation-title {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 0;
     }
 
     .platform-navigation-title strong {
-      font-size: 0.9rem;
-      letter-spacing: 0.01em;
+      color: #f8fafc;
+      font-size: 0.86rem;
+      font-weight: 720;
+      letter-spacing: -0.01em;
     }
 
     .platform-navigation-title span {
-      color: #8491a7;
-      font-size: 0.68rem;
+      color: #64748b;
+      font-size: 0.64rem;
+      font-weight: 550;
+      letter-spacing: 0.03em;
     }
 
     .platform-navigation-links {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.025);
     }
 
     .platform-navigation-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-
-      padding: 9px 13px;
-
-      border:
-        1px solid transparent;
-
+      min-height: 38px;
+      padding: 8px 13px;
+      color: #94a3b8;
+      border: 1px solid transparent;
       border-radius: 9px;
-
-      color: #aab5c7;
-
       text-decoration: none;
-
-      font-size: 0.82rem;
-      font-weight: 750;
-
-      transition:
-        color 160ms ease,
-        border-color 160ms ease,
-        background 160ms ease,
-        transform 160ms ease;
+      font-size: 0.78rem;
+      font-weight: 650;
+      transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
     }
 
     .platform-navigation-link:hover {
       color: #f8fafc;
-
-      border-color:
-        rgba(148, 163, 184, 0.20);
-
-      background:
-        rgba(255, 255, 255, 0.05);
-
-      transform:
-        translateY(-1px);
+      background: rgba(255, 255, 255, 0.045);
     }
 
     .platform-navigation-link.active {
-      color: #ffffff;
-
-      border-color:
-        rgba(124, 156, 255, 0.34);
-
-      background:
-        rgba(124, 156, 255, 0.16);
+      color: #f5f3ff;
+      border-color: rgba(139, 92, 246, 0.24);
+      background: rgba(124, 58, 237, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .platform-navigation-icon {
-      font-size: 0.95rem;
+      display: grid;
+      width: 19px;
+      height: 19px;
+      place-items: center;
+      color: #7c8aa0;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 6px;
+      font-size: 0.58rem;
+      font-weight: 800;
     }
 
-    @media (max-width: 640px) {
-      .platform-navigation {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 10px;
+    .platform-navigation-link.active .platform-navigation-icon {
+      color: #c4b5fd;
+      border-color: rgba(139, 92, 246, 0.25);
+      background: rgba(124, 58, 237, 0.12);
+    }
 
-        padding:
-          11px 14px;
+    @media (max-width: 700px) {
+      .platform-navigation {
+        align-items: center;
+        min-height: 64px;
+        padding: 9px 12px;
+      }
+
+      .platform-navigation-title span {
+        display: none;
       }
 
       .platform-navigation-links {
-        width: 100%;
+        gap: 2px;
+      }
+
+      .platform-navigation-link {
+        gap: 5px;
+        min-height: 36px;
+        padding: 7px 9px;
+      }
+
+      .platform-navigation-icon {
+        display: none;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .platform-navigation-brand {
+        gap: 8px;
+      }
+
+      .platform-navigation-logo {
+        width: 34px;
+        height: 34px;
+      }
+
+      .platform-navigation-title {
+        display: none;
+      }
+
+      .platform-navigation-links {
+        flex: 1;
+        justify-content: flex-end;
       }
 
       .platform-navigation-link {
         flex: 1;
         justify-content: center;
+        max-width: 104px;
+        font-size: 0.72rem;
       }
     }
   `;
@@ -240,10 +274,6 @@ function injectNavigationStyles() {
     style
   );
 }
-
-// ======================================================
-// Render
-// ======================================================
 
 function createNavigation() {
   const currentPage =
@@ -275,24 +305,11 @@ function createNavigation() {
           return `
             <a
               href="${item.href}"
-              class="
-                platform-navigation-link
-                ${active ? "active" : ""}
-              "
-              ${active
-                ? 'aria-current="page"'
-                : ""}
+              class="platform-navigation-link ${active ? "active" : ""}"
+              ${active ? 'aria-current="page"' : ""}
             >
-              <span
-                class="platform-navigation-icon"
-                aria-hidden="true"
-              >
-                ${item.icon}
-              </span>
-
-              <span>
-                ${item.label}
-              </span>
+              <span class="platform-navigation-icon" aria-hidden="true">${item.icon}</span>
+              <span>${item.label}</span>
             </a>
           `;
         }
@@ -300,31 +317,14 @@ function createNavigation() {
       .join("");
 
   navigation.innerHTML = `
-    <a
-      href="/dashboard.html"
-      class="platform-navigation-brand"
-    >
-      <span
-        class="platform-navigation-logo"
-        aria-hidden="true"
-      >
-        AI
-      </span>
-
+    <a href="/dashboard.html" class="platform-navigation-brand" aria-label="AI Social Agent dashboard">
+      <span class="platform-navigation-logo" aria-hidden="true">AI</span>
       <span class="platform-navigation-title">
-        <strong>
-          AI Social Agent
-        </strong>
-
-        <span>
-          Automation Platform
-        </span>
+        <strong>AI Social Agent</strong>
+        <span>Intelligent content platform</span>
       </span>
     </a>
-
-    <div class="platform-navigation-links">
-      ${links}
-    </div>
+    <div class="platform-navigation-links">${links}</div>
   `;
 
   return navigation;
@@ -345,10 +345,6 @@ function initializeNavigation() {
     createNavigation()
   );
 }
-
-// ======================================================
-// Initialize
-// ======================================================
 
 if (
   document.readyState ===

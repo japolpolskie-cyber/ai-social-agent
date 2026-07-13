@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci
 
 # ======================================================
 # Copy Application
@@ -29,6 +29,9 @@ COPY . .
 # ======================================================
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -q -O - http://127.0.0.1:3000/health > /dev/null || exit 1
 
 # ======================================================
 # Start

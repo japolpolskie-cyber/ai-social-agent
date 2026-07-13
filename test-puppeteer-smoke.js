@@ -66,19 +66,36 @@ async function run() {
         720,
     });
 
-    await page.goto(
-      "https://example.com",
+    await page.setContent(
+      `<!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <title>AI Social Agent Browser Smoke Test</title>
+        </head>
+        <body>
+          <main>
+            <h1>Browser runtime ready</h1>
+          </main>
+        </body>
+      </html>`,
       {
         waitUntil:
-          "networkidle2",
-
-        timeout:
-          30000,
+          "domcontentloaded",
       }
     );
 
     const title =
       await page.title();
+
+    if (
+      title !==
+      "AI Social Agent Browser Smoke Test"
+    ) {
+      throw new Error(
+        "Browser did not render the smoke-test document."
+      );
+    }
 
     await page.screenshot({
       path:

@@ -4,11 +4,11 @@ function showOutput(text) {
 }
 
 function showWaiting() {
-    showOutput("Waiting...");
+    showOutput("Your generated content will appear here.");
 }
 
 function showLoading() {
-    showOutput("🤖 Gemini is thinking...");
+    showOutput("Generating your content...");
 }
 
 function showError(message) {

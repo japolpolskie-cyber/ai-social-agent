@@ -1,100 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Social Agent</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Generate, validate, and monitor AI-powered social content from one intelligent workspace.">
+  <title>Generate | AI Social Agent</title>
+  <link rel="stylesheet" href="/design-system.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
-
-    <div class="container">
-
-        <header class="app-header">
-            <div>
-                <h1>🚀 AI Social Agent</h1>
-                <p>AI Content Playground</p>
-            </div>
-
-            <span class="provider-badge">🟢 Gemini</span>
-        </header>
-
-        <div class="app-layout">
-
-            <div class="panel">
-                <h2>⚙️ Content Setup</h2>
-
-                <label for="topicInput">Topic</label>
-                <input id="topicInput" type="text" value="AI automation for small businesses">
-
-                <label for="platformInput">Platform</label>
-                <select id="platformInput">
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="facebook">Facebook</option>
-                </select>
-
-                <label for="typeInput">Content Type</label>
-                <select id="typeInput">
-                    <option value="post">Post</option>
-                    <option value="caption">Caption</option>
-                </select>
-
-                <label for="toneInput">Tone</label>
-                <input id="toneInput" type="text" value="professional but friendly">
-
-                <label for="audienceInput">Audience</label>
-                <input id="audienceInput" type="text" value="small business owners">
-
-                <button id="generateBtn">✨ Generate</button>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">
-                    <h2>✨ Generated Content</h2>
-
-                    <div class="toolbar">
-                        <button id="copyBtn" class="small-btn">📋 Copy</button>
-                        <button id="clearBtn" class="small-btn secondary">🗑 Clear</button>
-                    </div>
-                </div>
-
-                <div id="output" class="output">Waiting...</div>
-
-                <div class="stats">
-                    <span id="charCount">Characters: 0</span>
-                    <span id="wordCount">Words: 0</span>
-                </div>
-            </div>
-
+  <main class="generate-page">
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <div class="hero-label">
+          <span class="hero-label-dot" aria-hidden="true"></span>
+          AI content infrastructure for modern teams
         </div>
 
-    </div>
+        <h1 id="heroTitle">
+          Turn one idea into content
+          <span>worth publishing.</span>
+        </h1>
 
-    <div id="toast" class="toast"></div>
+        <p class="hero-description">
+          Generate platform-ready social content through a reliable AI pipeline
+          with intelligent routing, validation, repair, and execution tracking.
+        </p>
 
-    <script src="/navigation.js"></script>
-    <script src="/components/platformLayout.js"></script>
+        <div class="hero-proof" aria-label="Platform capabilities">
+          <span>Multi-provider routing</span>
+          <span>Automatic validation</span>
+          <span>Full execution history</span>
+        </div>
+      </div>
 
-    <script>
-      initializePlatformLayout({
-        page: "generate",
-        title: "Generate",
-        description:
-          "Create, validate, and repair AI-powered social content."
-      });
-    </script>
+      <aside class="hero-status" aria-label="AI provider status">
+        <span class="provider-orbit" aria-hidden="true"><span>AI</span></span>
+        <div>
+          <span class="status-label">Active provider</span>
+          <strong>Gemini</strong>
+        </div>
+        <span class="provider-badge">
+          <span class="provider-dot" aria-hidden="true"></span>
+          Online
+        </span>
+      </aside>
+    </section>
 
-    <script src="modules/api.js"></script>
-    <script src="modules/ui.js"></script>
-    <script src="modules/stats.js"></script>
-    <script src="modules/clipboard.js"></script>
-    <script src="modules/loading.js"></script>
-    <script src="modules/toast.js"></script>
+    <section class="workspace-section" aria-labelledby="workspaceTitle">
+      <div class="workspace-heading">
+        <div>
+          <p class="eyebrow">AI Generation Studio</p>
+          <h2 id="workspaceTitle">Create your next post</h2>
+        </div>
+        <p>Describe the idea. The pipeline handles the rest.</p>
+      </div>
 
-    <script src="app.js"></script>
+      <div class="app-layout">
+        <article class="panel setup-panel">
+          <div class="panel-title-row">
+            <span class="panel-icon" aria-hidden="true">01</span>
+            <div>
+              <p class="panel-overline">Input</p>
+              <h3>Content brief</h3>
+            </div>
+          </div>
 
+          <div class="form-field form-field-featured">
+            <label for="topicInput">What should we create?</label>
+            <textarea id="topicInput" rows="4" placeholder="Describe your topic or idea...">AI automation for small businesses</textarea>
+            <span class="field-hint">Be specific for a more relevant result.</span>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="platformInput">Platform</label>
+              <select id="platformInput">
+                <option value="linkedin">LinkedIn</option>
+                <option value="facebook">Facebook</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="typeInput">Content type</label>
+              <select id="typeInput">
+                <option value="post">Post</option>
+                <option value="caption">Caption</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="toneInput">Tone of voice</label>
+            <input id="toneInput" type="text" value="professional but friendly" placeholder="e.g. clear and confident">
+          </div>
+
+          <div class="form-field">
+            <label for="audienceInput">Target audience</label>
+            <input id="audienceInput" type="text" value="small business owners" placeholder="Who is this for?">
+          </div>
+
+          <button id="generateBtn" type="button">
+            <span>Generate content</span>
+            <span class="button-arrow" aria-hidden="true">→</span>
+          </button>
+
+          <p class="generate-note">
+            <span aria-hidden="true">✦</span>
+            Routed through your configured AI pipeline
+          </p>
+        </article>
+
+        <article class="panel output-panel">
+          <div class="panel-header">
+            <div class="panel-title-row">
+              <span class="panel-icon panel-icon-accent" aria-hidden="true">02</span>
+              <div>
+                <p class="panel-overline">Result</p>
+                <h3>Generated content</h3>
+              </div>
+            </div>
+
+            <div class="toolbar" aria-label="Output actions">
+              <button id="copyBtn" class="small-btn" type="button">Copy</button>
+              <button id="clearBtn" class="small-btn secondary" type="button">Clear</button>
+            </div>
+          </div>
+
+          <div class="output-wrap">
+            <div class="output-glow" aria-hidden="true"></div>
+            <div id="output" class="output" tabindex="0" aria-live="polite">Your generated content will appear here.</div>
+          </div>
+
+          <div class="stats" aria-label="Content statistics">
+            <div class="stat-item">
+              <span class="stat-icon" aria-hidden="true">Aa</span>
+              <span id="charCount">Characters: 0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-icon" aria-hidden="true">#</span>
+              <span id="wordCount">Words: 0</span>
+            </div>
+            <span class="output-ready"><span></span> Ready</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="capability-section" aria-labelledby="capabilitiesTitle">
+      <div class="section-intro">
+        <p class="eyebrow">Built for reliable output</p>
+        <h2 id="capabilitiesTitle">A complete AI content pipeline</h2>
+        <p>From prompt to production-ready result, every generation is routed, validated, and recorded.</p>
+      </div>
+
+      <div class="capability-grid">
+        <article class="capability-card">
+          <span class="capability-number">01</span>
+          <div class="capability-icon" aria-hidden="true">◇</div>
+          <h3>Intelligent routing</h3>
+          <p>Selects the right provider and model for each platform and content type.</p>
+        </article>
+
+        <article class="capability-card">
+          <span class="capability-number">02</span>
+          <div class="capability-icon" aria-hidden="true">✓</div>
+          <h3>Quality validation</h3>
+          <p>Checks output against platform rules and automatically repairs issues.</p>
+        </article>
+
+        <article class="capability-card">
+          <span class="capability-number">03</span>
+          <div class="capability-icon" aria-hidden="true">↗</div>
+          <h3>Observable by default</h3>
+          <p>Tracks stages, timing, status, metadata, and replay history for every run.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <div>
+        <span class="footer-mark" aria-hidden="true">AI</span>
+        <span><strong>AI Social Agent</strong><small>Intelligent content infrastructure</small></span>
+      </div>
+      <p>Designed for reliable, repeatable AI workflows.</p>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/navigation.js"></script>
+  <script src="/components/platformLayout.js"></script>
+  <script>
+    initializePlatformLayout({
+      page: "generate",
+      title: "Generate",
+      description: "Create, validate, and repair AI-powered social content.",
+      showFooter: false
+    });
+  </script>
+  <script src="modules/api.js"></script>
+  <script src="modules/ui.js"></script>
+  <script src="modules/stats.js"></script>
+  <script src="modules/clipboard.js"></script>
+  <script src="modules/loading.js"></script>
+  <script src="modules/toast.js"></script>
+  <script src="app.js"></script>
 </body>
-
 </html>

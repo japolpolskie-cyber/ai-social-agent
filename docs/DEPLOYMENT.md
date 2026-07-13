@@ -11,6 +11,9 @@ Confirm:
 
 - `.env` is not committed
 - production API keys are configured
+- `API_AUTH_ENABLED=true` and `AI_SOCIAL_AGENT_API_KEY` is a long random secret
+- `CORS_ORIGINS` contains only trusted browser origins
+- `DB_FILE` points to persistent storage
 - SQLite database is backed up
 - `/health` and `/monitoring` work
 
@@ -46,3 +49,9 @@ database/ai-social-agent.db
 - graceful shutdown
 - production-safe error responses
 - log rotation
+
+## Readiness
+
+`GET /health` does not require API authentication. It returns HTTP 200 only
+when SQLite answers a probe query and HTTP 503 when the database is unavailable.
+The container image uses this endpoint for its built-in health check.

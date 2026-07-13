@@ -6,6 +6,10 @@ const environment = require(
   "../config/environment"
 );
 
+const securityConfig = require(
+  "../config/security"
+);
+
 // ======================================================
 // Helpers
 // ======================================================
@@ -69,6 +73,16 @@ function validateEnvironment() {
       "OPENROUTER_API_KEY",
       environment.providers
         .openrouter.apiKey
+    ),
+
+    checkRequired(
+      "AI_SOCIAL_AGENT_API_KEY",
+      securityConfig
+        .apiAuthentication
+        .apiKey,
+      securityConfig
+        .apiAuthentication
+        .enabled
     ),
   ];
 

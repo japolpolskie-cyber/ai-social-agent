@@ -2,22 +2,44 @@
 // Response Service
 // ======================================================
 
-function success(res, data = {}, statusCode = 200) {
-  return res.status(statusCode).json({
-    success: true,
-    ...data,
-  });
+const appConfig = require(
+  "../config/app"
+);
+
+const applicationLogger = require(
+  "./applicationLogger"
+);
+
+function success(
+  res,
+  data = {},
+  statusCode = 200
+) {
+  return res
+    .status(
+      statusCode
+    )
+    .json({
+      success: true,
+      ...data,
+    });
 }
 
 function normalizeError(error) {
   if (!error) {
     return {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "An unexpected error occurred.",
+      code:
+        "INTERNAL_SERVER_ERROR",
+
+      message:
+        "An unexpected error occurred.",
     };
   }
 
-  if (typeof error.toJSON === "function") {
+  if (
+    typeof error.toJSON ===
+      "function"
+  ) {
     return error.toJSON();
   }
 
@@ -31,14 +53,45 @@ function normalizeError(error) {
       String(error),
 
     ...(error.stage
-      ? { stage: error.stage }
+      ? {
+          stage:
+            error.stage,
+        }
       : {}),
 
     ...(error.details !== undefined &&
     error.details !== null
-      ? { details: error.details }
+      ? {
+          details:
+            error.details,
+        }
       : {}),
   };
+}
+
+function createPublicError(
+  errorValue,
+  statusCode,
+  environment =
+    appConfig.environment
+) {
+  if (
+    environment ===
+      "production" &&
+    statusCode >= 500
+  ) {
+    return {
+      code:
+        "INTERNAL_SERVER_ERROR",
+
+      message:
+        "Internal server error",
+    };
+  }
+
+  return normalizeError(
+    errorValue
+  );
 }
 
 function error(
@@ -47,29 +100,57 @@ function error(
   statusCode = 500
 ) {
   const safeStatusCode =
-    Number.isInteger(statusCode) &&
+    Number.isInteger(
+      statusCode
+    ) &&
     statusCode >= 400 &&
     statusCode <= 599
       ? statusCode
       : 500;
 
+  const normalizedError =
+    normalizeError(
+      errorValue
+    );
+
   const publicError =
-    normalizeError(errorValue);
+    createPublicError(
+      errorValue,
+      safeStatusCode
+    );
 
-  console.error("❌ Error:", {
-    code: publicError.code,
-    message: publicError.message,
-    stage: publicError.stage || null,
-    statusCode: safeStatusCode,
-  });
+  applicationLogger.error(
+    "Request failed.",
+    {
+      code:
+        normalizedError.code,
 
-  return res.status(safeStatusCode).json({
-    success: false,
-    error: publicError,
-  });
+      message:
+        normalizedError.message,
+
+      stage:
+        normalizedError.stage ||
+        null,
+
+      statusCode:
+        safeStatusCode,
+    }
+  );
+
+  return res
+    .status(
+      safeStatusCode
+    )
+    .json({
+      success: false,
+      error:
+        publicError,
+    });
 }
 
 module.exports = {
   success,
+  normalizeError,
+  createPublicError,
   error,
 };

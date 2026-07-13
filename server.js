@@ -44,6 +44,10 @@ const serverConfig = require(
   "./config/server"
 );
 
+const securityConfig = require(
+  "./config/security"
+);
+
 const {
   validateEnvironment,
 } = require(
@@ -56,6 +60,16 @@ const {
 
 const applicationLogger = require(
   "./services/applicationLogger"
+);
+
+const db = require(
+  "./database/db"
+);
+
+const {
+  apiKeyAuth,
+} = require(
+  "./middleware/apiKeyAuth"
 );
 
 const {
@@ -295,6 +309,9 @@ const corsOptions = {
   allowedHeaders: [
     "Content-Type",
     "Authorization",
+    securityConfig
+      .apiAuthentication
+      .headerName,
   ],
 
   credentials:
@@ -492,6 +509,7 @@ app.get(
 
 app.use(
   "/ai",
+  apiKeyAuth,
   aiRoutes
 );
 
@@ -502,11 +520,13 @@ app.use(
 
 app.use(
   "/facebook",
+  apiKeyAuth,
   facebookRoutes
 );
 
 app.use(
   "/linkedin",
+  apiKeyAuth,
   linkedinRoutes
 );
 
@@ -517,42 +537,50 @@ app.use(
 
 app.use(
   "/providers",
+  apiKeyAuth,
   providersRoutes
 );
 
 app.use(
   "/system",
+  apiKeyAuth,
   systemRoutes
 );
 
 app.use(
   "/pipelines",
+  apiKeyAuth,
   pipelineRoutes
 );
 
 app.use(
   "/monitoring",
+  apiKeyAuth,
   monitoringRoutes
 );
 
 app.use(
   "/dashboard",
+  apiKeyAuth,
   dashboardRoutes
 );
 
 // Must remain before /executions.
 app.use(
   "/executions/stats",
+  apiKeyAuth,
   executionAnalyticsRoutes
 );
 
 app.use(
   "/executions",
+  apiKeyAuth,
   executionReplayRoutes
 );
 
 app.use(
   "/executions",
+  apiKeyAuth,
   executionRoutes
 );
 
@@ -755,6 +783,12 @@ function shutdown(
       applicationLogger.info(
         "Server shutdown completed."
       );
+
+      if (
+        db.open
+      ) {
+        db.close();
+      }
 
       process.exit(0);
     }

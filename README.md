@@ -36,6 +36,18 @@ Copy-Item .env.example .env
 
 Add your API keys to `.env`.
 
+For deployments exposed outside a trusted network, enable API-key
+authentication and set a long random key:
+
+```text
+API_AUTH_ENABLED=true
+AI_SOCIAL_AGENT_API_KEY=<LONG_RANDOM_VALUE>
+```
+
+Authenticated API requests must include that value in the `x-api-key`
+header. The `/health` and `/version` endpoints remain unauthenticated for
+infrastructure probes.
+
 ## Run
 
 ```bash

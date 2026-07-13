@@ -6,6 +6,10 @@ const Database = require(
   "better-sqlite3"
 );
 
+const databaseConfig = require(
+  "../config/database"
+);
+
 const {
   initializeDatabase,
 } = require(
@@ -13,7 +17,19 @@ const {
 );
 
 const db = new Database(
-  "./database/ai-social-agent.db"
+  databaseConfig.file
+);
+
+db.pragma(
+  "foreign_keys = ON"
+);
+
+db.pragma(
+  "busy_timeout = 5000"
+);
+
+db.pragma(
+  "journal_mode = WAL"
 );
 
 initializeDatabase(

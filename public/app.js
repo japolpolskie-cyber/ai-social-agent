@@ -23,7 +23,7 @@ async function generateContent() {
     const payload = getFormPayload();
 
     if (!payload.topic) {
-        showToast("⚠️ Please enter a topic");
+        showToast("Please enter a topic");
         return;
     }
 
@@ -41,10 +41,10 @@ async function generateContent() {
 
         showOutput(data.output);
         updateStats(data.output);
-        showToast("✅ Content generated");
+        showToast("Content generated successfully");
     } catch (err) {
         showError(err.message || "Something went wrong.");
-        showToast("❌ Something went wrong");
+        showToast("Something went wrong");
     } finally {
         stopLoading();
         setGeneratingState(false);
@@ -99,29 +99,35 @@ function getInputValue(id) {
 async function handleCopy() {
     const text = output.textContent.trim();
 
-    if (!text || text.includes("Your generated content will appear here")) {
-        showToast("⚠️ Nothing to copy");
+    if (
+        !text ||
+        text === "Waiting..." ||
+        text.includes("Your generated content will appear here")
+    ) {
+        showToast("Nothing to copy yet");
         return;
     }
 
     const copied = await copyText(text);
 
     if (copied) {
-        showToast("✅ Copied to clipboard");
+        showToast("Copied to clipboard");
     } else {
-        showToast("❌ Copy failed");
+        showToast("Copy failed");
     }
 }
 
 function handleClear() {
     showWaiting();
     updateStats("");
-    showToast("🗑 Output cleared");
+    showToast("Output cleared");
 }
 
 function setGeneratingState(isGenerating) {
     generateBtn.disabled = isGenerating;
-    generateBtn.textContent = isGenerating ? "Generating..." : "Generate";
+    generateBtn.innerHTML = isGenerating
+        ? '<span>Generating content</span><span class="button-spinner" aria-hidden="true"></span>'
+        : '<span>Generate content</span><span class="button-arrow" aria-hidden="true">→</span>';
 }
 
 // ======================================================

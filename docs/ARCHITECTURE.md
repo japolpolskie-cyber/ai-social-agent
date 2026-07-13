@@ -47,3 +47,15 @@ Execution Store + Analytics + Replay
 3. Keep persistence behind store/query services.
 4. Use one execution path for API execution and replay.
 5. Validate contracts early and fail fast.
+
+## Production Boundaries
+
+- API-key authentication is an opt-in middleware boundary around application,
+  operational, pipeline, and execution APIs. Health and version probes remain
+  public.
+- `/health` is a readiness endpoint: it verifies SQLite with a real query and
+  returns HTTP 503 when persistence is unavailable.
+- SQLite uses the configured `DB_FILE`, WAL journaling, foreign-key enforcement,
+  and a busy timeout. The connection is closed during graceful shutdown.
+- Controllers may return detailed failures during development, while unexpected
+  server errors are redacted in production and retained in structured logs.

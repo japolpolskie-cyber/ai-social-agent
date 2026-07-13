@@ -15,6 +15,10 @@
 
     <link
         rel="stylesheet"
+        href="design-system.css">
+
+    <link
+        rel="stylesheet"
         href="workspace.css">
 
     <link
@@ -298,6 +302,14 @@ Loading...
     <script src="navigation.js"></script>
 
     <script src="components/platformLayout.js"></script>
+
+    <script>
+        initializePlatformLayout({
+            page: "executions",
+            title: "Execution details",
+            description: "Inspect execution metadata, stages, prompts, output, and replay history."
+        });
+    </script>
 
     <script src="execution-details.js"></script>
 
