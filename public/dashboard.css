@@ -1,5 +1,10 @@
 /* ====================================================== */
-/* Dashboard Variables */
+/* AI Social Agent Dashboard */
+/* UI Polish Release */
+/* ====================================================== */
+
+/* ====================================================== */
+/* Design Tokens */
 /* ====================================================== */
 
 :root {
@@ -10,16 +15,22 @@
     #11182b;
 
   --panel:
-    rgba(18, 26, 46, 0.92);
+    rgba(18, 26, 46, 0.94);
+
+  --panel-strong:
+    rgba(22, 31, 53, 0.98);
+
+  --panel-soft:
+    rgba(255, 255, 255, 0.03);
 
   --panel-hover:
-    rgba(24, 34, 58, 0.98);
+    rgba(28, 39, 66, 0.98);
 
   --border:
     rgba(148, 163, 184, 0.16);
 
   --border-strong:
-    rgba(148, 163, 184, 0.28);
+    rgba(148, 163, 184, 0.30);
 
   --text:
     #f8fafc;
@@ -33,6 +44,9 @@
   --accent:
     #7c9cff;
 
+  --accent-strong:
+    #9bb4ff;
+
   --success:
     #4ade80;
 
@@ -42,9 +56,17 @@
   --danger:
     #fb7185;
 
+  --shadow-small:
+    0 10px 30px
+    rgba(0, 0, 0, 0.18);
+
   --shadow:
     0 18px 50px
-    rgba(0, 0, 0, 0.24);
+    rgba(0, 0, 0, 0.26);
+
+  --shadow-hover:
+    0 22px 58px
+    rgba(0, 0, 0, 0.34);
 
   --radius-large:
     20px;
@@ -54,6 +76,9 @@
 
   --radius-small:
     10px;
+
+  --transition:
+    170ms ease;
 }
 
 /* ====================================================== */
@@ -61,17 +86,24 @@
 /* ====================================================== */
 
 * {
-  box-sizing: border-box;
+  box-sizing:
+    border-box;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme:
+    dark;
+
+  scroll-behavior:
+    smooth;
 }
 
 body {
-  min-height: 100vh;
+  min-height:
+    100vh;
 
-  margin: 0;
+  margin:
+    0;
 
   font-family:
     Inter,
@@ -97,13 +129,114 @@ body {
       transparent 28%
     ),
     var(--background);
+
+  -webkit-font-smoothing:
+    antialiased;
+
+  text-rendering:
+    optimizeLegibility;
 }
 
 button,
 input,
 select,
 textarea {
-  font: inherit;
+  font:
+    inherit;
+}
+
+button,
+select {
+  cursor:
+    pointer;
+}
+
+/* ====================================================== */
+/* Global Form Controls */
+/* ====================================================== */
+
+input,
+select,
+textarea {
+  min-height:
+    43px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    var(--radius-small);
+
+  color:
+    var(--text);
+
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  outline:
+    none;
+
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color:
+    var(--border-strong);
+
+  background:
+    rgba(255, 255, 255, 0.06);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color:
+    rgba(124, 156, 255, 0.68);
+
+  background:
+    rgba(255, 255, 255, 0.07);
+
+  box-shadow:
+    0 0 0 4px
+    rgba(124, 156, 255, 0.12);
+}
+
+/*
+ * Native dropdown menus can inherit unreadable light text
+ * from the dark color scheme. Explicit option colors keep
+ * Pipeline and Status choices readable.
+ */
+
+select option,
+select optgroup {
+  color:
+    #111827;
+
+  background:
+    #ffffff;
+}
+
+select option:checked {
+  color:
+    #ffffff;
+
+  background:
+    #2563eb;
+}
+
+select:disabled,
+input:disabled,
+textarea:disabled {
+  cursor:
+    not-allowed;
+
+  opacity:
+    0.58;
 }
 
 /* ====================================================== */
@@ -111,10 +244,11 @@ textarea {
 /* ====================================================== */
 
 .app-shell {
-  width: min(
-    1480px,
-    calc(100% - 32px)
-  );
+  width:
+    min(
+      1480px,
+      calc(100% - 32px)
+    );
 
   margin:
     0 auto;
@@ -128,15 +262,20 @@ textarea {
 /* ====================================================== */
 
 .dashboard-header {
-  display: flex;
+  display:
+    flex;
 
-  align-items: flex-start;
+  align-items:
+    flex-start;
 
-  justify-content: space-between;
+  justify-content:
+    space-between;
 
-  gap: 24px;
+  gap:
+    24px;
 
-  margin-bottom: 32px;
+  margin-bottom:
+    32px;
 
   padding:
     28px;
@@ -150,12 +289,24 @@ textarea {
   background:
     linear-gradient(
       135deg,
-      rgba(25, 35, 61, 0.96),
-      rgba(13, 20, 37, 0.96)
+      rgba(25, 35, 61, 0.98),
+      rgba(13, 20, 37, 0.98)
     );
 
   box-shadow:
     var(--shadow);
+
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.dashboard-header:hover {
+  border-color:
+    var(--border-strong);
+
+  box-shadow:
+    var(--shadow-hover);
 }
 
 .eyebrow,
@@ -174,6 +325,9 @@ textarea {
 
   letter-spacing:
     0.16em;
+
+  text-transform:
+    uppercase;
 }
 
 .dashboard-header h1 {
@@ -238,19 +392,22 @@ textarea {
     var(--text-soft);
 
   background:
-    rgba(255, 255, 255, 0.04);
+    rgba(255, 255, 255, 0.045);
 
   font-size:
-    0.84rem;
+    0.82rem;
 
   font-weight:
     800;
 
+  letter-spacing:
+    0.06em;
+
   text-transform:
     uppercase;
 
-  letter-spacing:
-    0.06em;
+  box-shadow:
+    var(--shadow-small);
 }
 
 .status-dot {
@@ -259,6 +416,9 @@ textarea {
 
   height:
     9px;
+
+  flex:
+    0 0 auto;
 
   border-radius:
     50%;
@@ -313,6 +473,15 @@ textarea {
 
   box-shadow:
     var(--shadow);
+
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.section:hover {
+  border-color:
+    rgba(148, 163, 184, 0.22);
 }
 
 .section-heading,
@@ -340,6 +509,9 @@ textarea {
 
   font-size:
     1.2rem;
+
+  line-height:
+    1.3;
 }
 
 .last-updated {
@@ -351,6 +523,76 @@ textarea {
 
   font-size:
     0.82rem;
+}
+
+/* ====================================================== */
+/* Dashboard Filters */
+/* ====================================================== */
+
+.dashboard-filters,
+.filters,
+.filter-bar {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    14px;
+
+  margin-bottom:
+    20px;
+}
+
+.dashboard-filters label,
+.filters label,
+.filter-bar label {
+  display:
+    flex;
+
+  min-width:
+    180px;
+
+  flex:
+    1 1 180px;
+
+  flex-direction:
+    column;
+
+  gap:
+    8px;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    0.72rem;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.07em;
+
+  text-transform:
+    uppercase;
+}
+
+.dashboard-filters select,
+.dashboard-filters input,
+.filters select,
+.filters input,
+.filter-bar select,
+.filter-bar input {
+  width:
+    100%;
+
+  padding:
+    10px 12px;
 }
 
 /* ====================================================== */
@@ -393,12 +635,16 @@ textarea {
     var(--radius-medium);
 
   background:
-    rgba(255, 255, 255, 0.025);
+    var(--panel-soft);
+
+  box-shadow:
+    var(--shadow-small);
 
   transition:
-    border-color 160ms ease,
-    transform 160ms ease,
-    background 160ms ease;
+    border-color var(--transition),
+    transform var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
 }
 
 .stat-card:hover {
@@ -407,6 +653,9 @@ textarea {
 
   background:
     var(--panel-hover);
+
+  box-shadow:
+    var(--shadow);
 
   transform:
     translateY(-2px);
@@ -420,21 +669,24 @@ textarea {
     var(--text-muted);
 
   font-size:
-    0.78rem;
+    0.76rem;
 
   font-weight:
-    700;
-
-  text-transform:
-    uppercase;
+    800;
 
   letter-spacing:
     0.07em;
+
+  text-transform:
+    uppercase;
 }
 
 .stat-value {
   margin:
     24px 0 0;
+
+  color:
+    var(--text);
 
   font-size:
     clamp(
@@ -445,6 +697,9 @@ textarea {
 
   font-weight:
     800;
+
+  overflow-wrap:
+    anywhere;
 }
 
 .stat-value-small {
@@ -488,6 +743,9 @@ textarea {
 }
 
 .panel {
+  min-width:
+    0;
+
   padding:
     24px;
 
@@ -502,6 +760,19 @@ textarea {
 
   box-shadow:
     var(--shadow);
+
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+}
+
+.panel:hover {
+  border-color:
+    rgba(148, 163, 184, 0.23);
+
+  box-shadow:
+    var(--shadow-hover);
 }
 
 .count-badge {
@@ -527,7 +798,7 @@ textarea {
     var(--text-soft);
 
   background:
-    rgba(255, 255, 255, 0.04);
+    rgba(255, 255, 255, 0.05);
 
   font-size:
     0.86rem;
@@ -574,7 +845,23 @@ textarea {
     var(--radius-medium);
 
   background:
-    rgba(255, 255, 255, 0.025);
+    var(--panel-soft);
+
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    transform var(--transition);
+}
+
+.list-item:hover {
+  border-color:
+    var(--border-strong);
+
+  background:
+    var(--panel-hover);
+
+  transform:
+    translateY(-1px);
 }
 
 .list-item-main {
@@ -586,6 +873,9 @@ textarea {
   margin:
     0;
 
+  color:
+    var(--text);
+
   font-size:
     0.96rem;
 
@@ -594,6 +884,9 @@ textarea {
 
   text-transform:
     capitalize;
+
+  overflow-wrap:
+    anywhere;
 }
 
 .list-item-description {
@@ -608,6 +901,9 @@ textarea {
 
   line-height:
     1.45;
+
+  overflow-wrap:
+    anywhere;
 }
 
 .health-indicator {
@@ -624,7 +920,7 @@ textarea {
     max-content;
 
   font-size:
-    0.76rem;
+    0.74rem;
 
   font-weight:
     800;
@@ -644,6 +940,10 @@ textarea {
     50%;
 
   background:
+    currentColor;
+
+  box-shadow:
+    0 0 10px
     currentColor;
 
   content:
@@ -687,6 +987,9 @@ textarea {
   color:
     var(--text-muted);
 
+  background:
+    rgba(255, 255, 255, 0.025);
+
   font-size:
     0.68rem;
 }
@@ -704,17 +1007,24 @@ textarea {
 
   border-radius:
     var(--radius-medium);
+
+  background:
+    rgba(5, 10, 24, 0.24);
+
+  scrollbar-color:
+    rgba(148, 163, 184, 0.42)
+    transparent;
 }
 
 table {
   width:
     100%;
 
-  border-collapse:
-    collapse;
-
   min-width:
     820px;
+
+  border-collapse:
+    collapse;
 }
 
 th,
@@ -734,16 +1044,22 @@ th {
     var(--text-muted);
 
   background:
-    rgba(255, 255, 255, 0.025);
+    rgba(255, 255, 255, 0.035);
 
   font-size:
-    0.72rem;
+    0.7rem;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.08em;
 
   text-transform:
     uppercase;
 
-  letter-spacing:
-    0.08em;
+  white-space:
+    nowrap;
 }
 
 td {
@@ -752,6 +1068,9 @@ td {
 
   font-size:
     0.86rem;
+
+  line-height:
+    1.5;
 }
 
 tbody tr:last-child td {
@@ -759,9 +1078,14 @@ tbody tr:last-child td {
     0;
 }
 
+tbody tr {
+  transition:
+    background var(--transition);
+}
+
 tbody tr:hover {
   background:
-    rgba(255, 255, 255, 0.025);
+    rgba(255, 255, 255, 0.035);
 }
 
 .execution-id {
@@ -798,7 +1122,7 @@ tbody tr:hover {
     7px;
 
   font-size:
-    0.75rem;
+    0.74rem;
 
   font-weight:
     800;
@@ -818,6 +1142,10 @@ tbody tr:hover {
     50%;
 
   background:
+    currentColor;
+
+  box-shadow:
+    0 0 9px
     currentColor;
 
   content:
@@ -850,13 +1178,22 @@ tbody tr:hover {
 button {
   border:
     0;
-
-  cursor:
-    pointer;
 }
 
 .secondary-button,
 #errorPanel button {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  min-height:
+    42px;
+
   padding:
     10px 16px;
 
@@ -870,23 +1207,40 @@ button {
     var(--text);
 
   background:
-    rgba(255, 255, 255, 0.05);
+    rgba(255, 255, 255, 0.055);
 
   font-weight:
     800;
 
+  box-shadow:
+    var(--shadow-small);
+
   transition:
-    background 160ms ease,
-    transform 160ms ease;
+    background var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 
 .secondary-button:hover,
 #errorPanel button:hover {
+  border-color:
+    rgba(124, 156, 255, 0.38);
+
   background:
-    rgba(255, 255, 255, 0.10);
+    rgba(124, 156, 255, 0.13);
+
+  box-shadow:
+    var(--shadow);
 
   transform:
     translateY(-1px);
+}
+
+.secondary-button:active,
+#errorPanel button:active {
+  transform:
+    translateY(0);
 }
 
 .secondary-button:disabled {
@@ -895,6 +1249,22 @@ button {
 
   opacity:
     0.6;
+
+  transform:
+    none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline:
+    none;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(124, 156, 255, 0.16);
 }
 
 /* ====================================================== */
@@ -910,13 +1280,19 @@ button {
 
   border:
     1px solid
-    rgba(251, 113, 133, 0.35);
+    rgba(251, 113, 133, 0.38);
 
   border-radius:
     var(--radius-large);
 
+  color:
+    var(--text);
+
   background:
     rgba(127, 29, 29, 0.20);
+
+  box-shadow:
+    var(--shadow);
 }
 
 .error-panel h2 {
@@ -930,11 +1306,14 @@ button {
 
   color:
     var(--text-soft);
+
+  line-height:
+    1.6;
 }
 
 .hidden {
   display:
-    none;
+    none !important;
 }
 
 /* ====================================================== */
@@ -965,11 +1344,37 @@ button {
 }
 
 /* ====================================================== */
+/* Reduced Motion */
+/* ====================================================== */
+
+@media (
+  prefers-reduced-motion:
+    reduce
+) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior:
+      auto !important;
+
+    transition-duration:
+      0.01ms !important;
+
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+  }
+}
+
+/* ====================================================== */
 /* Responsive */
 /* ====================================================== */
 
 @media (
-  max-width: 1100px
+  max-width:
+    1100px
 ) {
   .stats-grid,
   .stats-grid-five {
@@ -982,7 +1387,8 @@ button {
 }
 
 @media (
-  max-width: 800px
+  max-width:
+    800px
 ) {
   .dashboard-header {
     flex-direction:
@@ -1001,10 +1407,28 @@ button {
     flex-direction:
       column;
   }
+
+  .dashboard-filters,
+  .filters,
+  .filter-bar {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+  .dashboard-filters label,
+  .filters label,
+  .filter-bar label {
+    width:
+      100%;
+  }
 }
 
 @media (
-  max-width: 560px
+  max-width:
+    560px
 ) {
   .app-shell {
     width:
@@ -1031,6 +1455,19 @@ button {
   .stats-grid-five {
     grid-template-columns:
       1fr;
+  }
+
+  .stat-card {
+    min-height:
+      112px;
+  }
+
+  .list-item {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
   }
 
   .dashboard-footer {
